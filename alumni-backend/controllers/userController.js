@@ -1,7 +1,8 @@
 const User = require("../models/User");
 const StudentProfile = require("../models/StudentProfile");
+const AlumniProfile = require("../models/AlumniProfile"); // new import
 
-// GET logged in user
+// GET logged-in user
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -9,10 +10,12 @@ exports.getMe = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // also fetch student profile if role is student
     let profile = null;
+
     if (user.role === "student") {
       profile = await StudentProfile.findOne({ user: req.user.id });
+    } else if (user.role === "alumni") {
+      profile = await AlumniProfile.findOne({ user: req.user.id });
     }
 
     res.json({ user, profile });
@@ -26,34 +29,30 @@ exports.updateMe = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // update User basic info
+    // Update basic user info
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { name: req.body.name, email: req.body.email }, // update only safe fields
+      { name: req.body.name, email: req.body.email },
       { new: true }
     ).select("-password");
 
-    // if student, update or create profile
+    let profile = null;
+
     if (updatedUser.role === "student") {
-      let profile = await StudentProfile.findOne({ user: userId });
-
-      if (profile) {
-        // update existing
-        profile = await StudentProfile.findOneAndUpdate(
-          { user: userId },
-          { $set: req.body },
-          { new: true }
-        );
-      } else {
-        // create new
-        profile = new StudentProfile({ user: userId, ...req.body });
-        await profile.save();
-      }
-
-      return res.json({ user: updatedUser, profile });
+      profile = await StudentProfile.findOneAndUpdate(
+        { user: userId },
+        { $set: req.body },
+        { new: true, upsert: true }
+      );
+    } else if (updatedUser.role === "alumni") {
+      profile = await AlumniProfile.findOneAndUpdate(
+        { user: userId },
+        { $set: req.body },
+        { new: true, upsert: true }
+      );
     }
 
-    res.json({ user: updatedUser });
+    res.json({ user: updatedUser, profile });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server Error" });
