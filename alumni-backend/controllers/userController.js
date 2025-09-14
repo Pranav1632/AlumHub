@@ -1,46 +1,61 @@
-const User = require('../models/User');
+const User = require("../models/User");
+const StudentProfile = require("../models/StudentProfile");
 
-// @desc    Get logged-in user profile
-// @route   GET /api/users/me
-// @access  Private
-const getMe = async (req, res) => {
+// GET logged in user
+exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: 'Server Error' });
-  }
-};
-
-// @desc    Update logged-in user profile
-// @route   PUT /api/users/update
-// @access  Private
-const updateMe = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-
+    const user = await User.findById(req.user.id).select("-password");
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // Allow updating basic fields
-    user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
-    user.phone = req.body.phone || user.phone;
-
-    // Role-specific fields
-    if (user.role === 'student' || user.role === 'alumni') {
-      user.course = req.body.course || user.course;
-      user.batch = req.body.batch || user.batch;
-      user.company = req.body.company || user.company;
-      user.jobTitle = req.body.jobTitle || user.jobTitle;
+    // also fetch student profile if role is student
+    let profile = null;
+    if (user.role === "student") {
+      profile = await StudentProfile.findOne({ user: req.user.id });
     }
 
-    const updatedUser = await user.save();
-    res.json(updatedUser);
+    res.json({ user, profile });
   } catch (err) {
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
-module.exports = { getMe, updateMe };
+// UPDATE profile
+exports.updateMe = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // update User basic info
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { name: req.body.name, email: req.body.email }, // update only safe fields
+      { new: true }
+    ).select("-password");
+
+    // if student, update or create profile
+    if (updatedUser.role === "student") {
+      let profile = await StudentProfile.findOne({ user: userId });
+
+      if (profile) {
+        // update existing
+        profile = await StudentProfile.findOneAndUpdate(
+          { user: userId },
+          { $set: req.body },
+          { new: true }
+        );
+      } else {
+        // create new
+        profile = new StudentProfile({ user: userId, ...req.body });
+        await profile.save();
+      }
+
+      return res.json({ user: updatedUser, profile });
+    }
+
+    res.json({ user: updatedUser });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
+};

@@ -14,10 +14,12 @@ app.use(cors());
 // Routes
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");  // <-- add this
+const userRoutes = require("./routes/userRoutes"); // <-- add this
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);  // <-- mount admin routes
-
+app.use("/api/auth", userRoutes); // <-- mount user routes
+app.use("/api/user", userRoutes);
 // DB Connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
