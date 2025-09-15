@@ -15,11 +15,15 @@ app.use(cors());
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");  // <-- add this
 const userRoutes = require("./routes/userRoutes"); // <-- add this
+const alumniRoutes = require("./routes/alumniRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);  // <-- mount admin routes
 app.use("/api/auth", userRoutes); // <-- mount user routes
 app.use("/api/user", userRoutes);
+app.use("/api/alumni", alumniRoutes);
+
+
 // DB Connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
