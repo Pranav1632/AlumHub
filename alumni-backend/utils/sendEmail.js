@@ -21,3 +21,6 @@ const sendEmail = async ({ to, subject, text }) => {
 };
 
 module.exports = sendEmail;
+
+
+//// error ,required my own email must use an App Password (not your regular password)
