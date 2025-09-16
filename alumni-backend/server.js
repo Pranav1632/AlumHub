@@ -17,6 +17,9 @@ const adminRoutes = require("./routes/adminRoutes");  // <-- add this
 const userRoutes = require("./routes/userRoutes"); // <-- add this
 const alumniRoutes = require("./routes/alumniRoutes");
 const eventRoutes = require("./routes/eventRoutes");
+const mentorshipRoutes = require("./routes/mentorshipRoutes"); //
+
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);  // <-- mount admin routes
@@ -24,6 +27,7 @@ app.use("/api/auth", userRoutes); // <-- mount user routes
 app.use("/api/user", userRoutes);
 app.use("/api/alumni", alumniRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/mentorship", mentorshipRoutes);
 
 
 // DB Connection
