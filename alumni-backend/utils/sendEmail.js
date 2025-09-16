@@ -24,3 +24,4 @@ module.exports = sendEmail;
 
 
 //// error ,required my own email must use an App Password (not your regular password)
+//to send email ,,  ,,must use an App Password (not your regular password) if 2FA is enabled. You can generate one from your Google Account > Security > App Passwords
