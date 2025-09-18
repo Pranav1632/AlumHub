@@ -2,15 +2,9 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+// src/App.jsx
+import { AuthProvider } from "./context/AuthContext";
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-     <p >hii</p>
-    </>
-  )
+export default function App({ children }) {
+  return <AuthProvider>{children}</AuthProvider>;
 }
-
-export default App
