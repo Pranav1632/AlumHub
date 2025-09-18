@@ -2,12 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import App from "./App"; // ✅ AuthProvider wrapper
 import MainLayout from "./layout/MainLayout";
-
-
-/// 
-import App from "./App";
 import ProtectedRoute from "./components/ProtectedRoute";
+
 // Pages
 import Home from "./pages/Home";  
 import Signup from "./pages/Signup";
@@ -25,38 +23,41 @@ import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-  <Route path="/" element={<MainLayout />}>
-    {/* Public Routes */}
-    <Route index element={<Home />} />
-    <Route path="signup" element={<Signup />} />
-    <Route path="login" element={<Login />} />
+    <App> {/* ✅ App includes AuthProvider */}
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<MainLayout />}>
+            {/* Public Routes */}
+            <Route index element={<Home />} />
+            <Route path="signup" element={<Signup />} />
+            <Route path="login" element={<Login />} />
 
-    {/* 🔒 Protected Routes */}
-    <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-      <Route path="dashboard/student" element={<StudentDashboard />} />
-    </Route>
+            {/* Student Dashboard */}
+            <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
+              <Route path="dashboard/student" element={<StudentDashboard />} />
+            </Route>
 
-    <Route element={<ProtectedRoute allowedRoles={["alumni"]} />}>
-      <Route path="dashboard/alumni" element={<AlumniDashboard />} />
-    </Route>
+            {/* Alumni Dashboard */}
+            <Route element={<ProtectedRoute allowedRoles={["alumni"]} />}>
+              <Route path="dashboard/alumni" element={<AlumniDashboard />} />
+            </Route>
 
-    <Route element={<ProtectedRoute allowedRoles={["collegeAdmin"]} />}>
-      <Route path="dashboard/college" element={<CollegeDashboard />} />
-    </Route>
+            {/* College Admin Dashboard */}
+            <Route element={<ProtectedRoute allowedRoles={["collegeAdmin"]} />}>
+              <Route path="dashboard/college" element={<CollegeDashboard />} />
+            </Route>
 
-    {/* General protected routes (any logged-in user) */}
-    <Route element={<ProtectedRoute />}>
-      <Route path="chat" element={<ChatPage />} />
-      <Route path="discussion" element={<DiscussionPage />} />
-      <Route path="profile" element={<ProfilePage />} />
-      <Route path="alumni-directory" element={<AlumniDirectory />} />
-      <Route path="mentorship" element={<MentorshipRequestsPage />} />
-    </Route>
-  </Route>
-  </Routes>;
-
-    </BrowserRouter>
+            {/* Shared protected routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="chat" element={<ChatPage />} />
+              <Route path="discussion" element={<DiscussionPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="alumni-directory" element={<AlumniDirectory />} />
+              <Route path="mentorship" element={<MentorshipRequestsPage />} />
+            </Route>
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </App>
   </React.StrictMode>
 );
