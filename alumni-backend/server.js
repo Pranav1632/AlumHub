@@ -32,6 +32,8 @@ app.use("/api/events", eventRoutes);
 app.use("/api/mentorship", mentorshipRoutes);
 app.use("/api/chat", chatRoutes);
 
+app.use("/api/discussions", require("./routes/discussionRoutes"));
+
 // Default route
 app.get("/", (req, res) => {
   res.send("API is running...");
