@@ -1,27 +1,24 @@
 // utils/sendEmail.js
 const nodemailer = require("nodemailer");
 
-const sendEmail = async ({ to, subject, text }) => {
+const sendEmail = async (options) => {
   const transporter = nodemailer.createTransport({
-    service: "gmail", // or use SMTP config
+    service: "gmail", // or use SMTP config for your email service
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: process.env.EMAIL_USER, // from your .env
+      pass: process.env.EMAIL_PASS, // from your .env
     },
   });
 
   const mailOptions = {
-    from: `"AlumHub Admin" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    text,
+    from: `"AlumHub" <${process.env.EMAIL_USER}>`,
+    to: options.to,
+    subject: options.subject,
+    text: options.text,
+    html: options.html, // optional
   };
 
   await transporter.sendMail(mailOptions);
 };
 
 module.exports = sendEmail;
-
-
-//// error ,required my own email must use an App Password (not your regular password)
-//to send email ,,  ,,must use an App Password (not your regular password) if 2FA is enabled. You can generate one from your Google Account > Security > App Passwords
