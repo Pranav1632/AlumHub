@@ -72,8 +72,8 @@ export default function Signup() {
   return (
     <div className="min-h-screen relative flex items-center justify-center bg-gradient-to-br from-blue-100 via-purple-100 to-pink-200 px-4 overflow-hidden">
       {/* Decorative circles */}
-      <div className="absolute top-10 left-10 w-32 h-32 bg-blue-300 rounded-full opacity-30 animate-pulse"></div>
-      <div className="absolute bottom-20 right-10 w-40 h-40 bg-purple-300 rounded-full opacity-30 animate-bounce"></div>
+      <div className="absolute top-10 left-10 w-32 h-32 bg-blue-400 rounded-full opacity-30 animate-pulse"></div>
+      <div className="absolute bottom-20 right-10 w-40 h-40 bg-purple-500 rounded-full opacity-30 animate-bounce"></div>
 
       {/* Glassmorphism Signup Card */}
       <div className="bg-white/70 backdrop-blur-lg shadow-2xl rounded-2xl p-10 w-full max-w-lg z-10 animate-fade-in">

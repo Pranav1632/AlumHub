@@ -127,7 +127,7 @@ export default function DiscussionPage() {
             <p className="text-gray-700 mb-2">{p.content}</p>
             <div className="flex items-center space-x-4 text-sm">
               <button onClick={() => toggleLike(p.id)} className="text-gray-500 hover:text-red-500">
-                ❤️ {p.likes}
+                👍 {p.likes}
               </button>
               <button onClick={() => toggleReplyBox(p.id)} className="text-gray-500 hover:text-blue-500">
                 💬 Reply

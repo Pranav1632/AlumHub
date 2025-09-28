@@ -26,10 +26,11 @@ export default function Header() {
       </NavLink>
 
       {/* Navigation Links */}
-      <nav className="flex items-center space-x-4">
-        {!user && <NavLink to="/" className={navStyle}>Home</NavLink>}
-        <NavLink to="/about" className={navStyle}>About Us</NavLink>
-        <NavLink to="/feedback" className={navStyle}>Feedback</NavLink>
+    <nav className="flex items-center space-x-4">
+  {!user && <NavLink to="/" className={navStyle}>Home</NavLink>}
+  {!user && <NavLink to="/about" className={navStyle}>About Us</NavLink>}  {/* Updated */}
+  
+  
 
         {user && (
           <>
@@ -50,6 +51,7 @@ export default function Header() {
             <NavLink to="/job-board" className={navStyle}>Jobs</NavLink>
             <NavLink to="/calendar" className={navStyle}>Events</NavLink>
             <NavLink to="/profile" className={navStyle}>Profile</NavLink>
+            <NavLink to="/feedback" className={navStyle}>Feedback</NavLink>
             {user.role === "collegeAdmin" && (
               <NavLink to="/dashboard/college" className={navStyle}>Admin</NavLink>
             )}

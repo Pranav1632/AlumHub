@@ -199,11 +199,11 @@ export default function StudentDashboard() {
 
             {/* Event Card */}
             {/* Event Card */}
-<div className="dashboard-card event-card">
+<div className="dashboard-card event-card" style={{ gridColumn: "span 1" }}>
   <h3>
     <i className="fas fa-calendar-days icon-event"></i> Upcoming Events
   </h3>
-  <div className="calendar-wrapper">
+  <div className="calendar-wrapper " style={{ gridColumn: "span 2" }}>
     <EventCalendar />
   </div>
   <Link to="/events" className="card-link">

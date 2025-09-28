@@ -88,6 +88,248 @@ const alumniList = [
     position: "Hardware Architect",
     location: "San Diego, USA",
   },
+  {
+    id: 8,
+    name: "Sneha Patil",
+    position: "Software Engineer",
+    company: "Google",
+    location: "Pune, India",
+    branch: "Computer Engineering",
+    batch: 2016,
+    working: "Yes",
+    type: "Full-time",
+    img: "https://avatar.iran.liara.run/public/20",
+    phone: "+91 98765 43210",
+    roll: "CE2016SP",
+    linkedin: "https://linkedin.com/in/sneha-patil",
+    willingToMentor: true,
+    experience: [
+      {
+        title: "Software Engineer",
+        company: "Google",
+        duration: "Feb 2021 – Present · 4 yrs",
+        location: "Pune, India",
+        type: "Full-time",
+        logo: "/google-logo.png",
+      },
+      {
+        title: "Frontend Developer",
+        company: "Persistent Systems",
+        duration: "Jul 2018 – Jan 2021 · 2 yrs 6 mos",
+        location: "Nagpur, India",
+        type: "Full-time",
+        logo: "/persistent-logo.png",
+      },
+    ],
+    achievements: [
+      "Built internal dashboard used by 300+ employees",
+      "Won Google Hackathon India 2022",
+      "Mentored 5 interns through Google Summer of Code",
+    ],
+  },
+  {
+    id: 9,
+    name: "Rohan Jadhav",
+    position: "Design Engineer",
+    company: "Tata Motors",
+    location: "Mumbai, India",
+    branch: "Mechanical",
+    batch: 2014,
+    working: "Yes",
+    type: "Full-time",
+    img: "https://avatar.iran.liara.run/public/21",
+    phone: "+91 99887 66554",
+    roll: "ME2014RJ",
+    linkedin: "https://linkedin.com/in/rohan-jadhav",
+    willingToMentor: false,
+    experience: [
+      {
+        title: "Design Engineer",
+        company: "Tata Motors",
+        duration: "Jan 2016 – Present · 9 yrs",
+        location: "Mumbai, India",
+        type: "Full-time",
+        logo: "/tatamotors-logo.png",
+      },
+    ],
+    achievements: [
+      "Patented a new suspension design",
+      "Presented at Auto Expo 2023",
+    ],
+  },
+  {
+    id: 10,
+    name: "Aarti Kulkarni",
+    position: "System Analyst",
+    company: "Infosys",
+    location: "Pune, India",
+    branch: "IT",
+    batch: 2017,
+    working: "Yes",
+    type: "Full-time",
+    img: "https://avatar.iran.liara.run/public/22",
+    phone: "+91 91234 56789",
+    roll: "IT2017AK",
+    linkedin: "https://linkedin.com/in/aarti-kulkarni",
+    willingToMentor: true,
+    experience: [
+      {
+        title: "System Analyst",
+        company: "Infosys",
+        duration: "Mar 2020 – Present · 5 yrs",
+        location: "Pune, India",
+        type: "Full-time",
+        logo: "/infosys-logo.png",
+      },
+    ],
+    achievements: [
+      "Automated client reporting system",
+      "Recognized as Top Performer 2021",
+    ],
+  },
+  {
+    id: 11,
+    name: "Siddharth More",
+    position: "Independent Consultant",
+    company: "",
+    location: "Nashik, India",
+    branch: "Civil",
+    batch: 2013,
+    working: "No",
+    type: "Freelance",
+    img: "https://avatar.iran.liara.run/public/23",
+    phone: "+91 90000 12345",
+    roll: "CV2013SM",
+    linkedin: "https://linkedin.com/in/siddharth-more",
+    willingToMentor: true,
+    experience: [],
+    achievements: [
+      "Consulted on 12+ residential projects",
+      "Guest lecturer at Nashik Polytechnic",
+    ],
+  },
+  {
+    id: 12,
+    name: "Neha Shinde",
+    position: "Embedded Systems Engineer",
+    company: "Samsung R&D",
+    location: "Noida, India",
+    branch: "Electronics & Telecommunication",
+    batch: 2018,
+    working: "Yes",
+    type: "Full-time",
+    img: "https://avatar.iran.liara.run/public/24",
+    phone: "+91 98765 11122",
+    roll: "ET2018NS",
+    linkedin: "https://linkedin.com/in/neha-shinde",
+    willingToMentor: true,
+    experience: [
+      {
+        title: "Embedded Systems Engineer",
+        company: "Samsung R&D",
+        duration: "Aug 2019 – Present · 6 yrs",
+        location: "Noida, India",
+        type: "Full-time",
+        logo: "/samsung-logo.png",
+      },
+    ],
+    achievements: [
+      "Optimized firmware for IoT devices",
+      "Presented at IEEE Embedded Conference",
+    ],
+  },
+  {
+    id: 13,
+    name: "Omkar Pawar",
+    position: "Power Systems Analyst",
+    company: "Siemens",
+    location: "Mumbai, India",
+    branch: "Electrical",
+    batch: 2015,
+    working: "Yes",
+    type: "Full-time",
+    img: "https://avatar.iran.liara.run/public/25",
+    phone: "+91 88888 44444",
+    roll: "EE2015OP",
+    linkedin: "https://linkedin.com/in/omkar-pawar",
+    willingToMentor: false,
+    experience: [
+      {
+        title: "Power Systems Analyst",
+        company: "Siemens",
+        duration: "May 2016 – Present · 9 yrs",
+        location: "Mumbai, India",
+        type: "Full-time",
+        logo: "/siemens-logo.png",
+      },
+    ],
+    achievements: [
+      "Designed grid optimization model",
+      "Published paper in IEEE Transactions",
+    ],
+  },
+  {
+    id: 14,
+    name: "Pooja Joshi",
+    position: "Cloud Solutions Architect",
+    company: "Amazon",
+    location: "Hyderabad, India",
+    branch: "Computer Science",
+    batch: 2016,
+    working: "Yes",
+    type: "Full-time",
+    img: "https://avatar.iran.liara.run/public/26",
+    phone: "+91 77777 33333",
+    roll: "CS2016PJ",
+    linkedin: "https://linkedin.com/in/pooja-joshi",
+    willingToMentor: true,
+    experience: [
+      {
+        title: "Cloud Solutions Architect",
+        company: "Amazon",
+        duration: "Jan 2020 – Present · 5 yrs",
+        location: "Hyderabad, India",
+        type: "Full-time",
+        logo: "/amazon-logo.png",
+      },
+    ],
+    achievements: [
+      "Migrated 50+ clients to AWS",
+      "Certified AWS Professional Architect",
+    ],
+  },
+  {
+    id: 15,
+    name: "Aditya Gokhale",
+    position: "Automation Specialist",
+    company: "ABB",
+    location: "Pune, India",
+    branch: "Instrumentation",
+    batch: 2012,
+    working: "Yes",
+    type: "Full-time",
+    img: "https://avatar.iran.liara.run/public/27",
+    phone: "+91 90909 22222",
+    roll: "IN2012AG",
+    linkedin: "https://linkedin.com/in/aditya-gokhale",
+    willingToMentor: false,
+    experience: [
+      {
+        title: "Automation Specialist",
+        company: "ABB",
+        duration: "Apr 2013 – Present · 12 yrs",
+        location: "Pune, India",
+        type: "Full-time",
+        logo: "/abb-logo.png",
+      },
+    ],
+    achievements: [
+      "Implemented SCADA systems across 3 plants",
+      "Trained 100+ engineers in PLC programming",
+    ],
+  }
+
+  
 
 ];
 
@@ -107,16 +349,16 @@ export default function AlumniDirectory() {
           </button>
           <div className="nav-brand">AlumHub</div>
           <nav className="main-nav-links">
-            <a href="home.html" className="nav-link">Home</a>
+            
             <a href="#" className="nav-link active">Alumni</a>
-            <a href="private-messaging.html" className="nav-link">Messaging</a>
+            <a href="/chat" className="nav-link">Messaging</a>
           </nav>
         </div>
         <div className="navbar-right">
           <div className="search-container">
             <input
               type="text"
-              placeholder="Global Search..."
+              placeholder="Search Alumni......"
               className="global-search-input"
             />
             <i className="fas fa-search search-icon"></i>

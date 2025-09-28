@@ -9,8 +9,8 @@ export default function CalendarPage() {
   const events = [
     { date: "2025-09-20", title: "🎉 Alumni Meetup" },
     { date: "2025-09-25", title: "🎤 Guest Lecture" },
-    { date: "2025-10-05", title: "🏆 Hackathon" },
-    { date: "2025-10-05", title: "🏆 Hackathon" },
+    { date: "2025-09-05", title: "🏆 Hackathon" },
+    { date: "2025-09-05", title: "🏆 Hackathon" },
   ];
 
   const tileContent = ({ date, view }) => {
@@ -19,7 +19,7 @@ export default function CalendarPage() {
         (e) => new Date(e.date).toDateString() === date.toDateString()
       );
       return eventForDay ? (
-        <div className="w-4 h-4 bg-red-500 rounded-full mx-auto mt-1" title={eventForDay.title}></div>
+        <div className="w-4 h-4 bg-green-500 rounded-full mx-auto mt-1" title={eventForDay.title}></div>
       ) : null;
     }
   };

@@ -92,11 +92,11 @@ export default function JobBoard() {
         <div className="navbar-left">
           <div className="nav-brand">AlumHub</div>
           <nav className="main-nav-links">
-            <a href="/" className="nav-link">Home</a>
+           
             <a href="/alumni-directory" className="nav-link">Alumni</a>
-            <a href="/messaging" className="nav-link">Messaging</a>
+            
             <a href="/job-board" className="nav-link active">Job Board</a>
-            <a href="/more" className="nav-link">More</a>
+            <a href=" #" className="nav-link">More</a>
           </nav>
         </div>
         <div className="navbar-right">
