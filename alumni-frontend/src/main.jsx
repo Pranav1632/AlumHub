@@ -24,7 +24,7 @@ import AlumniDirectory from "./pages/AlumniDirectory";
 import JobBoard from "./pages/JobBoard"; // ✅ import the JobBoard page
 import CalendarPage from "./pages/CalenderPage";  // ✅ import the CalendarPage
 import ProfilePage from "./pages/ProfilePage";
-
+import AlumniProfile from "./pages/AlumniProfile"; // ✅ import at the top
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -73,8 +73,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <Route path="/calendar" element={<CalendarPage />} />
   <Route path="/events" element={<CalendarPage />} />
         <Route path="/profile" element={<ProfilePage />} />
-      
-
+      <Route path="/alumni-profile/:id" element={<AlumniProfile />} />
   
           </Routes>
         </main>
