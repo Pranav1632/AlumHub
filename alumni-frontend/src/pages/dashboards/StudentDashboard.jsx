@@ -198,15 +198,19 @@ export default function StudentDashboard() {
             </div>
 
             {/* Event Card */}
-            <div className="dashboard-card event-card">
-              <h3>
-                <i className="fas fa-calendar-days icon-event"></i> Event Horizon
-              </h3>
-              <EventCalendar />
-              <Link to="#" className="card-link">
-                Full Calendar <i className="fas fa-arrow-right"></i>
-              </Link>
-            </div>
+            {/* Event Card */}
+<div className="dashboard-card event-card">
+  <h3>
+    <i className="fas fa-calendar-days icon-event"></i> Upcoming Events
+  </h3>
+  <div className="calendar-wrapper">
+    <EventCalendar />
+  </div>
+  <Link to="/events" className="card-link">
+    Full Calendar <i className="fas fa-arrow-right"></i>
+  </Link>
+</div>
+
           </div>
         </section>
       </main>
