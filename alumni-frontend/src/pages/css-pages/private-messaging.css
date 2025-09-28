@@ -1,0 +1,817 @@
+/* private-messaging.css - Styling for the Private Messaging Page */
+
+/* --- Root Variables: Consistent with Home Page --- */
+:root {
+    --primary-brand-color: #3f51b5;     /* A deep, trustworthy indigo blue */
+    --secondary-brand-color: #5c6bc0;   /* A lighter, more inviting indigo */
+    --accent-color-green: #4CAF50;      /* Fresh green for success/events */
+    --accent-color-orange: #FF9800;     /* Warm orange for focus/announcements */
+    --accent-color-purple: #9C27B0;     /* Rich purple for community */
+
+    --text-dark: #263238;               /* Very dark charcoal grey for headings */
+    --text-medium: #455A64;             /* Medium grey for body text */
+    --text-light: #ffffff;              /* White for light backgrounds/contrast */
+    --bg-light: #eceff1;                /* A soft, very light grey background */
+    --card-bg-color: #ffffff;           /* Pure white for cards */
+    --border-color-light: #cfd8dc;      /* Light grey for subtle borders */
+    --shadow-base: rgba(0, 0, 0, 0.08); /* Soft shadow for depth */
+    --shadow-medium: rgba(0, 0, 0, 0.12); /* Slightly deeper shadow on hover */
+
+    --gradient-brand: linear-gradient(135deg, var(--primary-brand-color) 0%, var(--secondary-brand-color) 100%);
+    --gradient-accent-green: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+    --gradient-accent-orange: linear-gradient(135deg, #ffb74d 0%, #fb8c00 100%);
+    --gradient-accent-purple: linear-gradient(135deg, #ba68c8 0%, #8e24aa 100%);
+
+    /* --- Messaging Specific Colors --- */
+    --message-sent-bg: var(--primary-brand-color);
+    --message-sent-text: var(--text-light);
+    --message-received-bg: var(--bg-light);
+    --message-received-text: var(--text-dark);
+    --message-input-bg: var(--card-bg-color);
+
+    --status-online: #4CAF50;
+    --status-offline: #B0BEC5;
+    --status-away: #FFC107;
+}
+
+/* --- Global Body & Layout (from home.css, but tailored) --- */
+body {
+    font-family: 'Montserrat', sans-serif;
+    margin: 0;
+    background-color: var(--bg-light);
+    color: var(--text-medium);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.portal-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    flex-grow: 1;
+}
+
+/* --- Main Navbar Styling (Consistent with home.css) --- */
+.main-navbar {
+    background-color: var(--card-bg-color);
+    box-shadow: 0 2px 8px var(--shadow-base);
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color-light);
+    z-index: 1000;
+}
+
+.navbar-left, .navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.menu-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--text-medium);
+    font-size: 1.5em;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+.menu-toggle-btn:hover {
+    color: var(--primary-brand-color);
+}
+
+.nav-brand {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--primary-brand-color);
+    margin-right: 30px;
+    letter-spacing: -0.5px;
+}
+
+.main-nav-links {
+    display: flex;
+    gap: 25px;
+}
+
+.main-nav-links .nav-link {
+    color: var(--text-medium);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1em;
+    padding: 5px 0;
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+.main-nav-links .nav-link:hover {
+    color: var(--primary-brand-color);
+}
+
+.main-nav-links .nav-link.active {
+    color: var(--primary-brand-color);
+    font-weight: 600;
+}
+
+.main-nav-links .nav-link.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -5px;
+    width: 100%;
+    height: 3px;
+    background: var(--gradient-brand);
+    border-radius: 2px;
+}
+
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.global-search-input {
+    border: 1px solid var(--border-color-light);
+    border-radius: 25px;
+    padding: 8px 15px 8px 40px;
+    font-size: 0.95em;
+    width: 200px;
+    transition: all 0.3s ease;
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+}
+.global-search-input::placeholder {
+    color: var(--text-medium);
+    opacity: 0.8;
+}
+
+.global-search-input:focus {
+    border-color: var(--primary-brand-color);
+    box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.2);
+    outline: none;
+    width: 250px;
+    background-color: var(--card-bg-color);
+}
+
+.search-icon {
+    position: absolute;
+    left: 15px;
+    color: var(--text-medium);
+    font-size: 0.9em;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    font-size: 1.4em;
+    color: var(--text-medium);
+    cursor: pointer;
+    transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+    padding: 8px;
+    border-radius: 50%;
+}
+
+.icon-button:hover {
+    color: var(--primary-brand-color);
+    background-color: rgba(63, 81, 181, 0.1);
+    transform: scale(1.1);
+}
+
+/* New: Current User Profile Image in Navbar */
+.navbar-profile-img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%; /* Ensure it's perfectly circular */
+    object-fit: cover;
+    border: 2px solid var(--primary-brand-color); /* Subtle brand border */
+}
+.user-profile-btn {
+    padding: 0; /* Reset padding for image button */
+    border-radius: 50%; /* Ensure button is round */
+}
+.user-profile-btn:hover {
+    background-color: transparent; /* Don't want background hover on image */
+    transform: scale(1.05); /* Slight scale on hover */
+    box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.2); /* Soft shadow ring */
+}
+
+
+/* --- Messaging Layout --- */
+.messaging-layout {
+    display: flex;
+    flex-grow: 1;
+    /* Removed max-width and margin: auto */
+    /* Removed border-radius and box-shadow from here, move to individual panels if desired for "floating" effect */
+    overflow: hidden; /* Ensures contained elements behave correctly */
+    background-color: var(--card-bg-color); /* Overall background for the messaging module */
+    /* Calculate height to fill remaining space */
+    height: calc(100vh - 78px); /* Full height after navbar (adjust 78px if navbar height changes) */
+    box-shadow: 0 0 15px rgba(0,0,0,0.1); /* Subtle overall shadow for the main messaging container */
+}
+
+/* --- Message Sidebar (Left Panel - Contacts) --- */
+.message-sidebar {
+    width: 350px; /* Wider sidebar for contacts */
+    background-color: var(--card-bg-color);
+    border-right: 1px solid var(--border-color-light);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* Prevent shrinking */
+    padding-bottom: 20px;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.sidebar-header h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.5em;
+    color: var(--text-dark);
+    margin: 0;
+}
+
+.new-chat-btn {
+    font-size: 1.8em;
+    color: var(--accent-color-green); /* Green for new chat */
+}
+.new-chat-btn:hover {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: var(--accent-color-green);
+    transform: scale(1.1);
+}
+
+.search-contacts {
+    position: relative;
+    padding: 15px 25px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.contact-search-input {
+    width: 100%;
+    padding: 10px 15px 10px 40px;
+    border: 1px solid var(--border-color-light);
+    border-radius: 25px;
+    background-color: var(--bg-light);
+    font-size: 0.95em;
+    color: var(--text-dark);
+}
+.contact-search-input::placeholder {
+    color: var(--text-medium);
+    opacity: 0.8;
+}
+.contact-search-input:focus {
+    border-color: var(--primary-brand-color);
+    box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.2);
+    outline: none;
+    background-color: var(--card-bg-color);
+}
+.search-contacts .search-icon {
+    left: 40px; /* Adjust icon position within input */
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.contact-list {
+    flex-grow: 1;
+    overflow-y: auto; /* Scrollable contact list */
+    padding: 10px 0;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 25px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-left: 4px solid transparent; /* For active indicator */
+    position: relative;
+}
+
+.contact-item:hover {
+    background-color: var(--bg-light);
+}
+
+.contact-item.active {
+    background-color: var(--primary-brand-color); /* Active contact highlight */
+    color: var(--text-light);
+    border-left-color: var(--accent-color-orange); /* Strong accent for active */
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+}
+.contact-item.active .contact-info h4,
+.contact-item.active .last-message,
+.contact-item.active .message-time {
+    color: var(--text-light); /* White text for active item */
+}
+
+.contact-avatar {
+    position: relative;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+.contact-avatar img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%; /* Ensure circular */
+    object-fit: cover;
+    border: 2px solid var(--border-color-light);
+}
+
+.status-indicator {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%; /* Ensure circular */
+    border: 2px solid var(--card-bg-color); /* White border to stand out */
+}
+.status-indicator.online { background-color: var(--status-online); }
+.status-indicator.offline { background-color: var(--status-offline); }
+.status-indicator.away { background-color: var(--status-away); }
+
+.contact-info {
+    flex-grow: 1;
+    margin-right: 10px;
+    overflow: hidden; /* Hide overflow text */
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.contact-info h4 {
+    font-size: 1.05em;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0 0 3px 0;
+}
+.contact-info p.last-message {
+    font-size: 0.9em;
+    color: var(--text-medium);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.contact-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+    gap: 3px;
+}
+.message-time {
+    font-size: 0.8em;
+    color: var(--text-medium);
+    white-space: nowrap;
+}
+.unread-count {
+    background-color: var(--accent-color-orange); /* Orange for unread count */
+    color: var(--text-light);
+    font-size: 0.75em;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 3px 8px;
+    min-width: 20px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(255, 152, 0, 0.3);
+}
+
+/* --- Main Chat Area (Right Panel) --- */
+.chat-area {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--card-bg-color);
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    border-bottom: 1px solid var(--border-color-light);
+    background-color: var(--card-bg-color);
+    flex-shrink: 0;
+}
+
+.chat-header-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.chat-header-info .contact-avatar { /* Ensure chat header avatar is circular */
+    margin-right: 15px; /* Keep consistent spacing */
+}
+.chat-header-info .contact-avatar img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%; /* Ensure circular */
+}
+.chat-header-info h4 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.3em;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+}
+.chat-status {
+    font-size: 0.9em;
+    color: var(--status-online); /* Dynamic based on status */
+    font-weight: 500;
+}
+
+.chat-header-actions .icon-button {
+    font-size: 1.6em;
+}
+
+.message-list {
+    flex-grow: 1;
+    padding: 20px 25px;
+    overflow-y: auto; /* Scrollable message history */
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Spacing between messages */
+}
+
+.message {
+    display: flex;
+    align-items: flex-end;
+    max-width: 80%; /* Messages don't span full width */
+}
+
+.message.sent {
+    align-self: flex-end; /* Push sent messages to the right */
+    flex-direction: row-reverse; /* For timestamp/avatar on the right of bubble */
+}
+
+.message.received {
+    align-self: flex-start; /* Push received messages to the left */
+}
+
+.message-bubble {
+    padding: 12px 18px;
+    border-radius: 20px; /* Rounded bubbles */
+    font-size: 0.95em;
+    line-height: 1.4;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    word-wrap: break-word; /* Ensure long words break */
+    white-space: pre-wrap; /* Preserve whitespace and allow wrapping */
+}
+
+.message.sent .message-bubble {
+    background-color: var(--message-sent-bg);
+    color: var(--message-sent-text);
+    border-bottom-right-radius: 5px; /* Tail effect */
+    margin-left: 10px; /* Space between bubble and timestamp/avatar */
+    margin-right: 10px; /* Space from edge */
+}
+
+.message.received .message-bubble {
+    background-color: var(--message-received-bg);
+    color: var(--message-received-text);
+    border-bottom-left-radius: 5px; /* Tail effect */
+    margin-right: 10px; /* Space between bubble and timestamp/avatar */
+    margin-left: 10px; /* Space from edge */
+}
+
+/* New: Avatar for Sent Messages & ensuring circularity for all message avatars */
+.message-avatar {
+    margin-right: 10px; /* Default for received */
+    flex-shrink: 0;
+}
+.message-avatar img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%; /* Ensure circular */
+    object-fit: cover;
+    border: 1px solid var(--border-color-light);
+}
+
+.message.sent .sender-avatar { /* Specific styling for sender's avatar */
+    margin-left: 0; /* Override default margin */
+    margin-right: 10px; /* Space from bubble */
+}
+
+
+.message-timestamp {
+    font-size: 0.75em;
+    color: var(--text-medium);
+    margin: 0 5px;
+    white-space: nowrap;
+    align-self: flex-end; /* Align timestamp to bottom of bubble */
+}
+/* New: Adjust timestamp position for sent messages */
+.message.sent .message-timestamp {
+    order: -1; /* Place timestamp before bubble for sent messages */
+    margin-right: 0; /* Remove default right margin */
+    margin-left: 5px; /* Add left margin to separate from avatar/bubble */
+}
+.message.received .message-timestamp {
+    order: 1; /* Place timestamp after bubble for received messages */
+    margin-left: 0; /* Remove default left margin */
+    margin-right: 5px; /* Add right margin to separate from avatar/bubble */
+}
+/* Ensure the content container handles avatar for received messages */
+.message.received .message-content {
+    display: flex;
+    flex-direction: column; /* Stack bubble and timestamp */
+    align-items: flex-start;
+}
+.message.received .message-content .message-timestamp {
+    margin-top: 5px; /* Space between bubble and timestamp */
+    margin-left: 10px; /* Align with bubble start */
+}
+.message.sent .message-timestamp {
+    align-self: flex-end; /* Align timestamp to bottom of bubble */
+    margin-top: 5px; /* Space between bubble and timestamp */
+    margin-right: 10px; /* Align with bubble end */
+}
+
+
+.message-input-area {
+    display: flex;
+    align-items: center;
+    padding: 15px 25px;
+    border-top: 1px solid var(--border-color-light);
+    background-color: var(--card-bg-color);
+    flex-shrink: 0;
+    gap: 10px;
+}
+
+.message-input {
+    flex-grow: 1;
+    border: 1px solid var(--border-color-light);
+    border-radius: 25px;
+    padding: 10px 18px;
+    font-size: 1em;
+    min-height: 40px; /* Ensures minimum height */
+    max-height: 120px; /* Max height before scroll */
+    resize: vertical; /* Allow vertical resizing only */
+    overflow-y: auto; /* Scroll if content overflows */
+    color: var(--text-dark);
+    background-color: var(--bg-light);
+    transition: all 0.2s ease;
+}
+.message-input::placeholder {
+    color: var(--text-medium);
+    opacity: 0.7;
+}
+.message-input:focus {
+    border-color: var(--primary-brand-color);
+    box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.2);
+    outline: none;
+    background-color: var(--card-bg-color);
+}
+
+.attachment-btn, .send-btn {
+    font-size: 1.6em;
+    color: var(--text-medium);
+}
+.send-btn {
+    background: var(--gradient-brand);
+    color: var(--text-light);
+    border-radius: 50%; /* Circular send button */
+    width: 45px;
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(63, 81, 181, 0.3);
+}
+.send-btn:hover {
+    box-shadow: 0 6px 15px rgba(63, 81, 181, 0.4);
+    transform: translateY(-2px);
+}
+.attachment-btn:hover {
+    color: var(--accent-color-green); /* Green for attachments */
+}
+
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 1024px) {
+    .messaging-layout {
+        height: calc(100vh - 68px); /* Adjust for slightly smaller navbar */
+    }
+    .main-navbar { padding: 10px 20px; } /* Adjust navbar padding */
+    .message-sidebar {
+        width: 300px;
+    }
+    .contact-item {
+        padding: 12px 20px;
+    }
+    .contact-avatar img {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%; /* Ensure circular */
+    }
+    .chat-header-info h4 {
+        font-size: 1.2em;
+    }
+    .chat-header-info .contact-avatar img {
+        width: 38px; /* Adjust size for chat header on smaller screens */
+        height: 38px;
+    }
+    .message-list {
+        padding: 15px 20px;
+    }
+    .message-input-area {
+        padding: 12px 20px;
+    }
+    .navbar-profile-img { /* Adjust size for smaller screens */
+        width: 28px;
+        height: 28px;
+    }
+    .message-avatar img { /* Adjust message avatar size for smaller screens */
+        width: 32px;
+        height: 32px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-navbar .main-nav-links { display: none; }
+    .messaging-layout {
+        flex-direction: column; /* Stack sidebar and chat area */
+        height: calc(100vh - 58px); /* Adjust for mobile navbar height */
+        border-radius: 0; /* No rounded corners on mobile full screen */
+        box-shadow: none; /* No shadow for full screen */
+    }
+    .message-sidebar {
+        width: 100%;
+        height: 250px; /* Fixed height for sidebar on mobile */
+        border-right: none;
+        border-bottom: 1px solid var(--border-color-light);
+    }
+    .sidebar-header {
+        padding: 15px 20px;
+    }
+    .sidebar-header h3 {
+        font-size: 1.3em;
+    }
+    .search-contacts {
+        padding: 10px 20px;
+    }
+    .search-contacts .search-icon {
+        left: 30px;
+    }
+    .contact-list {
+        padding: 0;
+    }
+    .contact-item {
+        padding: 10px 20px;
+    }
+    .contact-avatar img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%; /* Ensure circular */
+    }
+    .contact-info h4 {
+        font-size: 1em;
+    }
+    .contact-info p.last-message {
+        font-size: 0.85em;
+    }
+    .message-time, .unread-count {
+        font-size: 0.7em;
+    }
+    .chat-area {
+        flex-grow: 1; /* Takes remaining space */
+        min-height: 0; /* Allow chat area to shrink if needed */
+    }
+    .chat-header {
+        padding: 10px 20px;
+    }
+    .chat-header-info h4 {
+        font-size: 1.1em;
+    }
+    .chat-header-info .contact-avatar img {
+        width: 35px; /* Adjust size for chat header on smaller screens */
+        height: 35px;
+    }
+    .chat-header-actions .icon-button {
+        font-size: 1.4em;
+    }
+    .message-list {
+        padding: 15px;
+        gap: 10px;
+    }
+    .message-bubble {
+        padding: 10px 15px;
+        font-size: 0.9em;
+    }
+    .message-avatar img {
+        width: 30px; /* Adjust message avatar size for smaller screens */
+        height: 30px;
+        border-radius: 50%; /* Ensure circular */
+    }
+    .message-timestamp {
+        font-size: 0.7em;
+    }
+    .message-input-area {
+        padding: 10px 15px;
+    }
+    .message-input {
+        padding: 8px 15px;
+        min-height: 35px;
+    }
+    .attachment-btn, .send-btn {
+        font-size: 1.4em;
+        width: 40px;
+        height: 40px;
+    }
+    .navbar-profile-img {
+        width: 25px;
+        height: 25px;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-navbar { padding: 8px 10px; }
+    .nav-brand { font-size: 1.5em; }
+    .global-search-input { width: 100px; padding: 6px 12px 6px 30px; }
+    .global-search-input:focus { width: 130px; }
+    .search-icon { left: 8px; font-size: 0.8em; }
+    .icon-button { font-size: 1.2em; padding: 5px; }
+
+    .messaging-layout {
+        height: calc(100vh - 50px); /* Adjust for very small navbar height */
+    }
+    .message-sidebar {
+        height: 180px;
+    }
+    .sidebar-header {
+        padding: 10px 15px;
+    }
+    .sidebar-header h3 {
+        font-size: 1.2em;
+    }
+    .search-contacts {
+        padding: 8px 15px;
+    }
+    .contact-item {
+        padding: 8px 15px;
+    }
+    .contact-avatar img {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%; /* Ensure circular */
+    }
+    .contact-info h4 {
+        font-size: 0.95em;
+    }
+    .contact-info p.last-message {
+        font-size: 0.8em;
+    }
+    .chat-header {
+        padding: 8px 15px;
+    }
+    .chat-header-info h4 {
+        font-size: 1em;
+    }
+    .chat-header-info .contact-avatar img {
+        width: 30px; /* Adjust size for chat header on very small screens */
+        height: 30px;
+    }
+    .chat-header-actions .icon-button {
+        font-size: 1.3em;
+    }
+    .message-list {
+        padding: 10px;
+        gap: 8px;
+    }
+    .message-bubble {
+        padding: 8px 12px;
+        font-size: 0.85em;
+        border-radius: 15px;
+    }
+    .message-avatar img {
+        width: 25px; /* Adjust message avatar size for very small screens */
+        height: 25px;
+        border-radius: 50%; /* Ensure circular */
+    }
+    .message-timestamp {
+        font-size: 0.65em;
+    }
+    .message-input-area {
+        padding: 8px 12px;
+        gap: 8px;
+    }
+    .message-input {
+        padding: 6px 12px;
+        min-height: 30px;
+    }
+    .attachment-btn, .send-btn {
+        font-size: 1.3em;
+        width: 35px;
+        height: 35px;
+    }
+}

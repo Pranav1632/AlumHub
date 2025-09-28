@@ -10,6 +10,7 @@ export default function CalendarPage() {
     { date: "2025-09-20", title: "🎉 Alumni Meetup" },
     { date: "2025-09-25", title: "🎤 Guest Lecture" },
     { date: "2025-10-05", title: "🏆 Hackathon" },
+    { date: "2025-10-05", title: "🏆 Hackathon" },
   ];
 
   const tileContent = ({ date, view }) => {
@@ -18,7 +19,7 @@ export default function CalendarPage() {
         (e) => new Date(e.date).toDateString() === date.toDateString()
       );
       return eventForDay ? (
-        <div className="w-2 h-2 bg-indigo-500 rounded-full mx-auto mt-1" title={eventForDay.title}></div>
+        <div className="w-4 h-4 bg-red-500 rounded-full mx-auto mt-1" title={eventForDay.title}></div>
       ) : null;
     }
   };
@@ -35,7 +36,7 @@ export default function CalendarPage() {
           onChange={setDate}
           value={date}
           tileContent={tileContent}
-          className="react-calendar w-full h-[600px] text-indigo-900 border-0 text-lg"
+          className="react-calendar w-full h-[600px] text-blue-900 border-0 text-lg"
         />
       </div>
 
@@ -56,7 +57,7 @@ export default function CalendarPage() {
               .map((e, i) => (
                 <li
                   key={i}
-                  className="p-3 rounded-lg bg-indigo-100 text-indigo-900 font-medium flex items-center justify-between shadow-sm"
+                  className="p-3 rounded-lg bg-indigo-100 text-red-900 font-medium flex items-center justify-between shadow-sm"
                 >
                   {e.title}
                 </li>
