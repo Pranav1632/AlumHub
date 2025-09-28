@@ -16,3 +16,7 @@ const alumniProfileSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 module.exports = mongoose.model('AlumniProfile', alumniProfileSchema);
+
+
+
+

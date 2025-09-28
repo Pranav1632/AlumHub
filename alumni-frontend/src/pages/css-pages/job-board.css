@@ -1,0 +1,577 @@
+/* job-board.css - Specific styling for the Job Board Page */
+
+/* --- General Layout --- */
+.job-board-layout {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    background-color: var(--bg-light); /* Consistent background */
+    padding: 25px; /* Overall padding around the content */
+    gap: 25px; /* Space between major sections */
+    min-height: calc(100vh - 78px); /* Fill remaining viewport height after navbar */
+    overflow-y: auto; /* Allow the entire page content to scroll if needed */
+}
+
+/* --- Page Header Section --- */
+.job-board-header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    gap: 15px; /* Space between title and actions */
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.page-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.2em;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.page-title i {
+    color: var(--primary-brand-color);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.job-count-summary {
+    font-size: 1.1em;
+    color: var(--text-medium);
+    font-weight: 500;
+}
+.job-count-summary span {
+    font-weight: 700;
+    color: var(--primary-brand-color);
+}
+
+.post-job-btn {
+    background: var(--gradient-success); /* Green for 'Post Job' */
+    color: var(--text-light);
+    border: none;
+    border-radius: 25px;
+    padding: 10px 22px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-small-green);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.post-job-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: var(--shadow-medium-green);
+}
+
+/* --- Filters Section --- */
+.job-filters-section {
+    display: flex;
+    flex-direction: column; /* Stack quick filters and search/advanced */
+    gap: 20px;
+    background-color: var(--card-bg-color);
+    padding: 20px 25px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-base);
+}
+
+.quick-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.filter-tag {
+    background-color: var(--bg-light);
+    color: var(--text-medium);
+    border: 1px solid var(--border-color-light);
+    border-radius: 25px; /* Pill shape */
+    padding: 9px 18px;
+    font-size: 0.9em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex; /* For possible future icons in tags */
+    align-items: center;
+    gap: 5px;
+}
+
+.filter-tag:hover {
+    background-color: var(--bg-dark);
+    border-color: var(--primary-brand-color);
+    color: var(--text-dark);
+}
+
+.filter-tag.active {
+    background: var(--gradient-brand);
+    color: var(--text-light);
+    border-color: var(--primary-brand-color);
+    box-shadow: var(--shadow-small);
+    font-weight: 600;
+}
+.filter-tag.active:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-medium);
+}
+
+.search-and-advanced-filters {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap; /* Allow wrapping */
+    justify-content: flex-end; /* Align to right */
+}
+
+.job-search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-grow: 1; /* Allow search to take more space */
+    max-width: 400px; /* Limit search bar width */
+}
+
+.job-search-input {
+    border: 1px solid var(--border-color-light);
+    border-radius: 25px;
+    padding: 10px 15px 10px 40px; /* Left padding for icon */
+    font-size: 0.95em;
+    width: 100%;
+    transition: all 0.3s ease;
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+}
+.job-search-input::placeholder {
+    color: var(--text-medium);
+    opacity: 0.8;
+}
+
+.job-search-input:focus {
+    border-color: var(--primary-brand-color);
+    box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.2);
+    outline: none;
+    background-color: var(--card-bg-color);
+}
+
+.job-search-container .search-icon {
+    position: absolute;
+    left: 15px;
+    color: var(--text-medium);
+    font-size: 1em;
+}
+
+.advanced-filter-btn {
+    background-color: var(--secondary-brand-color); /* A slightly different color for advanced filters */
+    color: var(--text-light);
+    border: none;
+    border-radius: 25px;
+    padding: 10px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(156, 39, 176, 0.3); /* Match secondary brand */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.advanced-filter-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    background-color: var(--primary-brand-color); /* Lighter on hover */
+    box-shadow: 0 6px 15px rgba(156, 39, 176, 0.4);
+}
+
+
+/* --- Job Listings Grid --- */
+.job-listings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Responsive grid for cards */
+    gap: 25px; /* Spacing between job cards */
+    flex-grow: 1; /* Allow grid to fill remaining space */
+}
+
+/* --- Individual Job Card --- */
+.job-card {
+    background-color: var(--card-bg-color);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow-subtle);
+    border: 1px solid var(--border-color-light);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    position: relative; /* For the surprise element */
+    overflow: hidden; /* Ensure glowing border is clipped */
+}
+
+.job-card::before { /* The Surprise: Glowing Border on Hover */
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border-radius: 15px; /* Match card border-radius + padding */
+    border: 3px solid transparent;
+    transition: all 0.3s ease;
+    pointer-events: none; /* Don't interfere with clicks */
+    z-index: 0;
+}
+
+.job-card:hover {
+    transform: translateY(-8px); /* More pronounced lift */
+    box-shadow: var(--shadow-medium);
+    border-color: var(--primary-brand-color); /* Highlight border */
+}
+
+.job-card:hover::before {
+    border-color: var(--primary-brand-color); /* The glowing effect */
+    box-shadow: 0 0 15px var(--primary-brand-color), 0 0 30px rgba(63, 81, 181, 0.4);
+}
+
+
+.card-header {
+    display: flex;
+    align-items: flex-start; /* Align logo and text at the top */
+    gap: 15px;
+    margin-bottom: 15px;
+    border-bottom: 1px dashed var(--border-color-light);
+    padding-bottom: 15px;
+}
+
+.company-logo {
+    width: 60px; /* Slightly larger logo */
+    height: 60px;
+    border-radius: 8px; /* Slightly rounded squares */
+    object-fit: contain; /* Ensure logo fits */
+    padding: 5px;
+    background-color: var(--bg-light);
+    flex-shrink: 0; /* Don't let it shrink */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.job-overview {
+    flex-grow: 1;
+}
+
+.job-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.5em; /* Larger, more prominent title */
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0 0 5px 0;
+    line-height: 1.2;
+}
+
+.company-name {
+    font-size: 1.1em;
+    color: var(--primary-brand-color); /* Brand color for company name */
+    font-weight: 500;
+    margin: 0;
+}
+
+.job-type-label {
+    font-size: 0.8em;
+    font-weight: 700;
+    color: var(--text-light);
+    padding: 5px 12px;
+    border-radius: 18px; /* More rounded pill shape */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    align-self: flex-start; /* Align to the top-right of the header */
+}
+
+/* Specific colors for job types */
+.job-type-label.internship {
+    background-color: var(--accent-color-purple); /* Purple for Internships */
+}
+.job-type-label.fulltime {
+    background-color: var(--accent-color-green); /* Green for Full-Time */
+}
+.job-type-label.parttime {
+    background-color: var(--accent-color-orange); /* Orange for Part-Time */
+}
+
+
+.job-details-summary {
+    display: flex;
+    flex-wrap: wrap; /* Allow details to wrap */
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.job-details-summary p {
+    font-size: 0.95em;
+    color: var(--text-medium);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+.job-details-summary p i {
+    color: var(--primary-brand-color); /* Brand color for detail icons */
+    font-size: 1em;
+    flex-shrink: 0;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto; /* Pushes footer to the bottom of the card */
+    padding-top: 15px;
+    border-top: 1px dashed var(--border-color-light);
+}
+
+.deadline {
+    font-size: 0.95em;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+.deadline strong.text-danger { /* For urgent deadlines */
+    color: var(--danger-color);
+    font-weight: 700;
+}
+.deadline strong.text-success { /* For less urgent deadlines */
+    color: var(--success-color);
+    font-weight: 700;
+}
+
+
+.action-btn.apply-btn {
+    background: var(--gradient-button);
+    color: var(--text-light);
+    border: none;
+    border-radius: 25px;
+    padding: 10px 20px;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--shadow-small);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.action-btn.apply-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: var(--shadow-medium);
+    background: var(--gradient-button-hover); /* A slightly darker gradient on hover */
+}
+
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 1200px) {
+    .job-board-layout {
+        padding: 20px;
+        gap: 20px;
+    }
+    .page-title {
+        font-size: 2em;
+    }
+    .job-count-summary {
+        font-size: 1em;
+    }
+    .post-job-btn, .advanced-filter-btn {
+        padding: 9px 18px;
+        font-size: 0.9em;
+    }
+    .job-search-input {
+        max-width: 300px;
+    }
+    .job-listings-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    .job-card {
+        padding: 18px;
+    }
+    .job-title {
+        font-size: 1.4em;
+    }
+    .company-logo {
+        width: 50px;
+        height: 50px;
+    }
+}
+
+@media (max-width: 992px) {
+    .job-filters-section {
+        flex-direction: column;
+        gap: 15px;
+        padding: 18px 20px;
+    }
+    .search-and-advanced-filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .job-search-container, .job-search-input {
+        max-width: 100%;
+    }
+    .post-job-btn, .advanced-filter-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .job-board-layout {
+        padding: 15px;
+        gap: 15px;
+        min-height: calc(100vh - 68px); /* Adjust for smaller navbar */
+    }
+    .job-board-header-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding-bottom: 10px;
+    }
+    .page-title {
+        font-size: 1.8em;
+    }
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .job-count-summary {
+        text-align: center;
+        width: 100%;
+    }
+    .job-filters-section {
+        padding: 15px;
+        border-radius: 8px;
+    }
+    .quick-filters {
+        justify-content: center;
+    }
+    .filter-tag {
+        padding: 8px 15px;
+        font-size: 0.85em;
+    }
+    .job-listings-grid {
+        grid-template-columns: 1fr; /* Single column on mobile */
+    }
+    .job-card {
+        padding: 15px;
+        border-radius: 8px;
+    }
+    .card-header {
+        flex-direction: column; /* Stack logo, title, type */
+        align-items: center;
+        text-align: center;
+        gap: 10px;
+    }
+    .job-overview {
+        text-align: center;
+    }
+    .company-logo {
+        width: 50px;
+        height: 50px;
+    }
+    .job-type-label {
+        align-self: center; /* Center the label when stacked */
+    }
+    .job-title {
+        font-size: 1.3em;
+    }
+    .job-details-summary {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start; /* Align details left */
+    }
+    .card-footer {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+    .apply-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .job-board-layout {
+        padding: 10px;
+        gap: 10px;
+        min-height: calc(100vh - 58px); /* Adjust for even smaller navbar */
+    }
+    .page-title {
+        font-size: 1.6em;
+    }
+    .job-count-summary {
+        font-size: 0.9em;
+    }
+    .post-job-btn {
+        font-size: 0.85em;
+        padding: 8px 15px;
+    }
+    .job-filters-section {
+        padding: 12px;
+    }
+    .filter-tag {
+        font-size: 0.8em;
+        padding: 7px 12px;
+    }
+    .job-search-input {
+        font-size: 0.9em;
+    }
+    .job-card {
+        padding: 12px;
+    }
+    .job-title {
+        font-size: 1.2em;
+    }
+    .company-name {
+        font-size: 1em;
+    }
+    .job-details-summary p {
+        font-size: 0.85em;
+    }
+    .deadline {
+        font-size: 0.9em;
+    }
+    .apply-btn {
+        font-size: 0.85em;
+        padding: 8px 15px;
+    }
+}
+
+/* Custom CSS Variables (Ensure these are in your global style.css or :root in home.css) */
+/*
+:root {
+    --primary-brand-color: #3f51b5;
+    --secondary-brand-color: #9c27b0;
+    --text-dark: #333;
+    --text-medium: #666;
+    --text-light: #fff;
+    --bg-light: #f8faff;
+    --card-bg-color: #ffffff;
+    --border-color-light: #e0e0e0;
+    --shadow-subtle: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-base: 0 4px 15px rgba(0,0,0,0.1);
+    --shadow-medium: 0 6px 20px rgba(0,0,0,0.15);
+    --gradient-brand: linear-gradient(45deg, var(--primary-brand-color), var(--secondary-brand-color));
+    --gradient-button: linear-gradient(45deg, #4CAF50, #8BC34A); 
+    --gradient-button-hover: linear-gradient(45deg, #388E3C, #689F38);
+    --gradient-success: linear-gradient(45deg, #4CAF50, #8BC34A);
+    --shadow-small-green: 0 3px 10px rgba(76, 175, 80, 0.3);
+    --shadow-medium-green: 0 6px 15px rgba(76, 175, 80, 0.4);
+
+    --accent-color-purple: #9b59b6;
+    --accent-color-green: #2ecc71;
+    --accent-color-orange: #f39c12;
+    --danger-color: #e74c3c;
+    --success-color: #28a745;
+}
+*/

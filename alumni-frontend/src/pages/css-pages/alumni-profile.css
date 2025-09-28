@@ -1,0 +1,40 @@
+/* alumni-profile.css - Specific styling for Alumni */
+@import url('base-profile.css');
+
+:root {
+    --profile-primary-color: #0077b5; /* LinkedIn Blue */
+    --profile-secondary-color: #004d7a; /* Darker blue */
+    --profile-accent-color: #6a9ac9;   /* Lighter blue accent */
+}
+
+/* Alumni specific intro card enhancements */
+.alumni-intro-card .intro-profile-pic {
+    border-color: var(--profile-primary-color);
+}
+.alumni-intro-card .intro-name {
+    color: var(--profile-primary-color);
+}
+.alumni-intro-card .intro-tagline {
+    font-style: italic;
+}
+
+/* Alumni Achievements - use primary color accent */
+.alumni-achievements-list li {
+    background-color: #e6f7ff; /* Lighter background */
+    border-color: #cceeff;
+    color: var(--profile-secondary-color);
+}
+.alumni-achievements-list li i {
+    color: var(--profile-primary-color);
+}
+
+/* Alumni specific tag item styling */
+.alumni-tag-item {
+    background-color: #e6f7ff;
+    border-color: #cceeff;
+    color: var(--profile-primary-color);
+}
+.alumni-tag-item:hover {
+    background-color: var(--profile-primary-color);
+    color: var(--text-light);
+}

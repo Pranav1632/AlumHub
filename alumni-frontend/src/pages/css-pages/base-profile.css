@@ -1,0 +1,454 @@
+/* base-profile.css - Foundational styles for all profile types */
+
+:root {
+    /* Base Colors - can be overridden by specific profile CSS */
+    --profile-primary-color: #4a90e2; /* A vibrant blue */
+    --profile-secondary-color: #6a82fb; /* A softer purple-blue */
+    --profile-accent-color: #f67280;   /* A subtle red/pink accent */
+
+    --text-dark: #333333;
+    --text-medium: #666666;
+    --text-light: #ffffff;
+    --bg-light: #f0f2f5; /* Page background */
+    --card-bg: #ffffff;
+    --border-light: #e0e0e0;
+    --shadow-light: rgba(0, 0, 0, 0.08);
+}
+
+/* --- Global & Body Styles --- */
+body {
+    font-family: 'Montserrat', sans-serif;
+    margin: 0;
+    background-color: var(--bg-light);
+    display: flex;
+    justify-content: center;
+    padding: 30px;
+    box-sizing: border-box;
+    min-height: 100vh;
+    color: var(--text-dark);
+}
+
+/* --- Wrapper for the whole profile content --- */
+.custom-profile-wrapper {
+    width: 100%;
+    max-width: 700px; /* Consistent max-width */
+}
+
+/* --- Grid Layout (Single column) --- */
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+/* --- Main Column (Now the only column) --- */
+.main-profile-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Spacing between cards */
+}
+
+/* --- General Card Styling --- */
+.profile-intro-card,
+.profile-section-card {
+    background-color: var(--card-bg);
+    border-radius: 15px;
+    box-shadow: 0 6px 20px var(--shadow-light);
+    overflow: hidden;
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+.profile-section-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Profile Intro Card (Shared structure) --- */
+.profile-intro-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px;
+    text-align: center;
+}
+.intro-profile-pic {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    border: 4px solid var(--border-light);
+    object-fit: cover;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    margin-bottom: 20px;
+}
+.intro-text-details {
+    margin-bottom: 20px;
+}
+.intro-name {
+    font-family: 'Kalam', cursive;
+    font-size: 2.2em;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.intro-tagline {
+    margin: 5px 0 0;
+    font-size: 1em;
+    color: var(--text-medium);
+    font-weight: 500;
+}
+.intro-location {
+    margin: 5px 0 0;
+    font-size: 0.9em;
+    color: var(--text-medium);
+}
+.intro-location i {
+    color: var(--profile-accent-color); /* Uses generic accent */
+    margin-right: 5px;
+}
+.intro-location a {
+    color: var(--profile-primary-color); /* Uses generic primary */
+    text-decoration: none;
+    font-weight: 600;
+}
+.intro-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* --- Action Buttons (Shared styling, colors from VARS) --- */
+.action-btn-primary,
+.action-btn-secondary,
+.action-btn-tertiary {
+    border: none;
+    border-radius: 30px;
+    padding: 12px 22px;
+    font-weight: 600;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.action-btn-primary {
+    background: linear-gradient(45deg, var(--profile-primary-color), var(--profile-secondary-color));
+    color: var(--text-light);
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4); /* Base blue shadow */
+}
+.action-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(74, 144, 226, 0.5);
+}
+.action-btn-secondary {
+    background-color: var(--profile-secondary-color);
+    color: var(--text-light);
+    box-shadow: 0 4px 10px rgba(106, 130, 251, 0.3);
+}
+.action-btn-secondary:hover {
+    background-color: #5d77e4; /* Slightly darker than base secondary */
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(106, 130, 251, 0.4);
+}
+.action-btn-tertiary {
+    background-color: transparent;
+    border: 2px solid var(--border-light);
+    color: var(--text-medium);
+}
+.action-btn-tertiary:hover {
+    border-color: var(--profile-primary-color);
+    color: var(--profile-primary-color);
+    background-color: rgba(74, 144, 226, 0.1);
+}
+
+/* --- General Section Card --- */
+.profile-section-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    border-bottom: 1px solid var(--border-light);
+}
+.card-title {
+    font-size: 1.4em;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+}
+.card-header-actions {
+    display: flex;
+    gap: 15px;
+}
+.card-action-icon {
+    font-size: 1.2em;
+    color: var(--text-medium);
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+.card-action-icon:hover {
+    color: var(--profile-primary-color);
+    transform: scale(1.1);
+}
+.card-body {
+    padding: 20px 30px;
+}
+.card-body p {
+    margin: 0 0 10px 0;
+    font-size: 1em;
+    line-height: 1.7;
+    color: var(--text-medium);
+}
+
+/* --- Form Field Styling (for editable fields) --- */
+.profile-field-group {
+    margin-bottom: 15px;
+}
+.profile-field-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: var(--text-dark);
+    font-size: 0.95em;
+}
+.profile-field-group input[type="text"],
+.profile-field-group input[type="email"],
+.profile-field-group input[type="tel"],
+.profile-field-group input[type="url"],
+.profile-field-group textarea,
+.profile-field-group select {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1em;
+    color: var(--text-dark);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+}
+.profile-field-group input:focus,
+.profile-field-group textarea:focus,
+.profile-field-group select:focus {
+    border-color: var(--profile-primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+    outline: none;
+}
+.profile-field-group textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* --- Common List Styles (used for achievements, courses, clubs) --- */
+.generic-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.generic-list li {
+    background-color: #f8f8f8;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    font-size: 1em;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+}
+.generic-list li i {
+    margin-right: 10px;
+    color: var(--profile-primary-color); /* Uses generic primary */
+    font-size: 1.1em;
+}
+
+/* --- Tag Styles (for skills, some achievements) --- */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.tag-item {
+    background-color: var(--bg-light); /* Light background for tags */
+    color: var(--text-medium);
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 500;
+    border: 1px solid var(--border-light);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.tag-item:hover {
+    background-color: var(--profile-primary-color);
+    color: var(--text-light);
+    border-color: var(--profile-primary-color);
+}
+
+
+/* --- Experience / Internship Item Styling --- */
+.experience-item {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    align-items: flex-start;
+}
+.org-logo-sm {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: contain;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: #f7f7f7;
+    padding: 5px;
+}
+.experience-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.job-title {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 1.1em;
+    margin: 0;
+}
+.org-name {
+    font-weight: 500;
+    color: var(--text-medium);
+    font-size: 1em;
+    margin: 0;
+}
+.job-duration, .job-location {
+    font-size: 0.9em;
+    color: var(--text-medium);
+    margin: 0;
+}
+.view-more-link {
+    display: block;
+    text-align: center;
+    margin-top: 15px;
+    color: var(--profile-primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+.view-more-link:hover {
+    color: #3870cc; /* Slightly darker blue */
+    transform: translateX(5px);
+}
+.view-more-link i {
+    margin-left: 8px;
+    font-size: 0.9em;
+}
+
+/* --- Checkbox Styling (for willing to mentor) --- */
+.custom-checkbox-group {
+    display: flex;
+    align-items: center;
+    margin-top: 15px;
+    font-weight: 500;
+    color: var(--text-medium);
+}
+.custom-checkbox-group input[type="checkbox"] {
+    margin-right: 10px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    /* Basic styling, advanced styling would use custom checkmark */
+}
+
+
+/* --- Responsive Layout --- */
+@media (max-width: 768px) {
+    body {
+        padding: 20px;
+    }
+    .custom-profile-wrapper {
+        max-width: 100%;
+    }
+    .profile-intro-card {
+        padding: 25px;
+    }
+    .intro-profile-pic {
+        width: 110px;
+        height: 110px;
+    }
+    .intro-name {
+        font-size: 2em;
+    }
+    .intro-tagline {
+        font-size: 0.95em;
+    }
+    .intro-location {
+        font-size: 0.85em;
+    }
+    .intro-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    .action-btn-primary, .action-btn-secondary, .action-btn-tertiary {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .card-header, .card-body {
+        padding: 18px 25px;
+    }
+    .card-title {
+        font-size: 1.2em;
+    }
+    .org-logo-sm {
+        width: 45px;
+        height: 45px;
+    }
+    .job-title {
+        font-size: 1.05em;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 15px;
+    }
+    .profile-intro-card {
+        padding: 20px;
+    }
+    .intro-profile-pic {
+        width: 90px;
+        height: 90px;
+        margin-bottom: 15px;
+    }
+    .intro-name {
+        font-size: 1.8em;
+    }
+    .intro-tagline, .intro-location {
+        font-size: 0.85em;
+    }
+    .intro-actions {
+        gap: 10px;
+    }
+    .action-btn-primary, .action-btn-secondary, .action-btn-tertiary {
+        padding: 10px 18px;
+        font-size: 0.9em;
+    }
+    .card-header, .card-body {
+        padding: 15px 18px;
+    }
+    .card-title {
+        font-size: 1.1em;
+    }
+    .experience-item {
+        gap: 12px;
+        margin-bottom: 15px;
+    } 
+    .org-logo-sm {
+        width: 40px;
+        height: 40px;
+    }
+    .job-title {
+        font-size: 1em;
+    }
+    .org-name, .job-duration, .job-location {
+        font-size: 0.8em;
+    }
+}

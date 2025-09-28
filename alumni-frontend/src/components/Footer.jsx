@@ -1,9 +1,10 @@
-import React from 'react'
+import React from "react";
+import "./Footer.css";
 
-function Footer() {
+export default function Footer() {
   return (
-    <div>Footer</div>
-  )
+    <footer className="footer">
+      <p>© {new Date().getFullYear()} AlumHub. All rights reserved.</p>
+    </footer>
+  );
 }
-
-export default Footer
