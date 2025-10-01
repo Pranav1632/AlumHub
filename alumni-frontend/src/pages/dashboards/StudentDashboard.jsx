@@ -10,7 +10,7 @@ export default function StudentDashboard() {
   const slides = [
     {
       img: "/alumni-spotlight-1.jpg",
-      title: "Dr. Jane Doe '05",
+      title: "Dr. Ashitosh ",
       desc: '"Innovation is seeing what everybody has seen and thinking what nobody has thought."',
       btn: "View Profile",
     },
@@ -100,7 +100,7 @@ export default function StudentDashboard() {
             </div>
             <div className="hero-content">
               <h1 className="welcome-heading">
-                Good Morning, <span className="user-name">Lilian Simon</span>!
+                Good Morning, <span className="user-name">Pranav Gaikwad</span>!
               </h1>
               <p className="welcome-message">
                 Ready to make today productive? Your personalized dashboard awaits.

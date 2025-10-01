@@ -5,7 +5,7 @@ import "./css-pages/alumni-page.css";
 const alumniList = [
   {
     id: 1,
-    name: "John Doe",
+    name: "Shreyash Shinde",
     branch: "Computer Science",
     working: "Yes",
     batch: 2018,
@@ -17,7 +17,7 @@ const alumniList = [
   },
   {
     id: 2,
-    name: "Jane Smith",
+    name: "Shreya Gaikwad",
     branch: "Electrical Eng.",
     working: "Yes",
     batch: 2019,
@@ -29,7 +29,7 @@ const alumniList = [
   },
   {
     id: 3,
-    name: "Alex M.",
+    name: "Vinay Gole",
     branch: "Business Admin.",
     working: "No",
     batch: 2020,

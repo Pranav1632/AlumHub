@@ -1,18 +1,27 @@
 import React, { useState } from "react";
 import "./css-pages/private-messaging.css";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPhone } from '@fortawesome/free-solid-svg-icons';
 
+import {
+  
+  faVideo,
+  faEllipsisVertical,
+  faPaperclip,
+  faPaperPlane
+} from '@fortawesome/free-solid-svg-icons';
 export default function ChatPage() {
   const [contacts, setContacts] = useState([
     {
       id: 1,
-      name: "John Doe",
+      name: "Vinay",
       avatar: "https://avatar.iran.liara.run/public/13",
       status: "online",
       lastMessage: "Hey, are you free for a call?",
       lastTime: "10:30 AM",
       unread: 3,
       messages: [
-        { sender: "me", text: "Hi John, how are you? Just checking in about the alumni mentorship program.", time: "10:28 AM" },
+        { sender: "me", text: "Hi Vinay, how are you? Just checking in about the alumni mentorship program.", time: "10:28 AM" },
         { sender: "other", text: "Hey! I'm doing great, thanks! Yes, interested in the mentorship program. What did you have in mind?", time: "10:30 AM" },
         { sender: "me", text: "Great! Let's set up a virtual coffee chat next week. Does that sound good?", time: "10:32 AM" },
         { sender: "other", text: "Perfect! I'm free on Tuesday or Thursday afternoon.", time: "10:35 AM" },
@@ -20,23 +29,30 @@ export default function ChatPage() {
     },
     {
       id: 2,
-      name: "Alice Johnson",
+      name: "Apeksha K",
       avatar: "https://avatar.iran.liara.run/public/55",
       status: "offline",
       lastMessage: "I've sent the project details.",
       lastTime: "Yesterday",
       unread: 0,
-      messages: [],
+      messages: [
+       
+        { sender: "other", text: "Hey! ", time: "8:03 AM" },
+      
+      ],
     },
     {
       id: 3,
-      name: "Robert Peterson",
+      name: "Rohit Dikshit",
       avatar: "https://avatar.iran.liara.run/public/49",
       status: "online",
       lastMessage: "New event details posted!",
       lastTime: "8:15 AM",
       unread: 1,
-      messages: [],
+      messages: [{ sender: "me", text: "Hi Rohit, how are you? Just checking in about the alumni mentorship program.", time: "10:28 AM" },
+        { sender: "other", text: "Hey! I'm doing great, thanks! Yes, interested in the mentorship program. What did you have in mind?", time: "10:30 AM" },
+        
+        { sender: "other", text: "Perfect! I'm free on Tuesday or Thursday afternoon.", time: "10:35 AM" },],
     },
   ]);
 
@@ -111,10 +127,16 @@ export default function ChatPage() {
               <span className="chat-status">{activeContact.status === "online" ? "Online" : activeContact.status === "away" ? "Away" : "Offline"}</span>
             </div>
             <div className="chat-header-actions">
-              <button className="icon-button"><i className="material-icons">videocam</i></button>
-              <button className="icon-button"><i className="material-icons">call</i></button>
-              <button className="icon-button"><i className="material-icons">more_vert</i></button>
-            </div>
+  <button className="icon-button">
+    <FontAwesomeIcon icon={faVideo} />
+  </button>
+  <button className="icon-button">
+    <FontAwesomeIcon icon={faPhone} />
+  </button>
+  <button className="icon-button">
+    <FontAwesomeIcon icon={faEllipsisVertical} />
+  </button>
+</div>
           </div>
 
           <div className="message-list">
@@ -139,19 +161,21 @@ export default function ChatPage() {
           </div>
 
           <div className="message-input-area">
-            <button className="icon-button attachment-btn"><i className="material-icons">attach_file</i></button>
-            <textarea
-              className="message-input"
-              rows="1"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendMessage())}
-            />
-            <button className="icon-button send-btn" onClick={sendMessage}>
-              <i className="material-icons">send</i>
-            </button>
-          </div>
+  <button className="icon-button attachment-btn">
+    <FontAwesomeIcon icon={faPaperclip} />
+  </button>
+  <textarea
+    className="message-input"
+    rows="1"
+    value={input}
+    onChange={(e) => setInput(e.target.value)}
+    placeholder="Type your message..."
+    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendMessage())}
+  />
+  <button className="icon-button send-btn" onClick={sendMessage}>
+    <FontAwesomeIcon icon={faPaperPlane} />
+  </button>
+</div>
         </main>
       </div>
     </div>

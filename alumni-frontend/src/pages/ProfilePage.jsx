@@ -2,17 +2,17 @@ import React, { useState } from "react";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState({
-    name: "Student Name",
-    tagline: "Computer Science Student at [University Name]",
+    name: "Pranav Gaikwad",
+    tagline: "Computer Science Student at AISSMS IOIT",
     location: "City, Country",
     contact: "Contact Info",
-    phone: "+1 987-654-3210",
+    phone: "7499167820",
     rollNumber: "S2023001",
     branch: "Computer Engineering",
     majors: "Software Development, AI",
-    enrollmentYear: "2023",
-    currentYear: "1st Year",
-    gpa: "3.8 / 4.0",
+    enrollmentYear: "2024",
+    currentYear: "2st Year",
+    gpa: "9.3/10.0",
     courses: [
       "Data Structures and Algorithms",
       "Introduction to Web Development",
@@ -58,7 +58,7 @@ export default function ProfilePage() {
       <section className="flex flex-col md:flex-row items-center bg-green-50 border border-green-200 rounded-lg p-6 mb-6 shadow">
         <img
           src="student-profile-pic.jpg"
-          alt="Student Profile"
+          alt=" ProfilePic"
           className="w-32 h-32 rounded-full border-4 border-green-500 mb-4 md:mb-0 md:mr-6"
         />
         <div className="flex-1">

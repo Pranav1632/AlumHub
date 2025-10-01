@@ -5,7 +5,7 @@ export default function DiscussionPage() {
   const [posts, setPosts] = useState([
     {
       id: uuidv4(),
-      author: "Alumni",
+      author: "Pratik Doshi",
       role: "Alumni",
       content: "Excited for the upcoming hackathon!",
       createdAt: new Date(),
@@ -14,7 +14,7 @@ export default function DiscussionPage() {
     },
     {
       id: uuidv4(),
-      author: "Student",
+      author: "Akshay T",
       role: "Student",
       content: "Anyone wants to join me for the robotics club?",
       createdAt: new Date(),
@@ -23,7 +23,7 @@ export default function DiscussionPage() {
     },
     {
       id: uuidv4(),
-      author: "Admin",
+      author: "Dr Pratik ",
       role: "Admin",
       content: "Reminder: Alumni meet is scheduled for Oct 10th!",
       createdAt: new Date(),
@@ -32,7 +32,7 @@ export default function DiscussionPage() {
     },
     {
       id: uuidv4(),
-      author: "Student",
+      author: "Aryaa kamble",
       role: "Student",
       content: "Just finished building my first React app 🚀",
       createdAt: new Date(),
@@ -41,7 +41,7 @@ export default function DiscussionPage() {
     },
     {
       id: uuidv4(),
-      author: "Alumni",
+      author: "Shridhar Jagtap",
       role: "Alumni",
       content: "Looking for mentees interested in cybersecurity.",
       createdAt: new Date(),
