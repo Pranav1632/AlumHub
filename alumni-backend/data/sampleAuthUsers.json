@@ -1,0 +1,18 @@
+{
+  "admins": [
+    {
+      "name": "College 1 Admin",
+      "email": "admin1@alumhub.demo",
+      "password": "Admin@123",
+      "collegeId": "123",
+      "instituteCode": "INST001"
+    },
+    {
+      "name": "College 2 Admin",
+      "email": "admin2@alumhub.demo",
+      "password": "Admin@123",
+      "collegeId": "1234",
+      "instituteCode": "INST002"
+    }
+  ]
+}

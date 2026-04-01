@@ -1,67 +1,66 @@
-// src/pages/CalendarPage.jsx
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import api from "../utils/axiosInstance";
 
 export default function CalendarPage() {
   const [date, setDate] = useState(new Date());
+  const [events, setEvents] = useState([]);
 
-  const events = [
-    { date: "2025-09-20", title: "🎉 Alumni Meetup" },
-    { date: "2025-09-25", title: "🎤 Guest Lecture" },
-    { date: "2025-09-05", title: "🏆 Hackathon" },
-    { date: "2025-09-05", title: "🏆 Hackathon" },
-  ];
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await api.get("/events");
+        setEvents(res.data?.events || []);
+      } catch {
+        setEvents([]);
+      }
+    };
+    load();
+  }, []);
 
-  const tileContent = ({ date, view }) => {
-    if (view === "month") {
-      const eventForDay = events.find(
-        (e) => new Date(e.date).toDateString() === date.toDateString()
-      );
-      return eventForDay ? (
-        <div className="w-4 h-4 bg-green-500 rounded-full mx-auto mt-1" title={eventForDay.title}></div>
-      ) : null;
-    }
-  };
+  const eventsByDay = useMemo(() => {
+    const map = new Map();
+    events.forEach((e) => {
+      const key = new Date(e.date).toDateString();
+      const curr = map.get(key) || [];
+      curr.push(e);
+      map.set(key, curr);
+    });
+    return map;
+  }, [events]);
+
+  const selectedEvents = eventsByDay.get(date.toDateString()) || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-100 p-8 flex flex-col items-center">
-      <h1 className="text-4xl font-bold text-indigo-900 mb-2">📅 AlumHub Event Calendar</h1>
-      <p className="text-indigo-700 mb-8 text-center max-w-2xl">
-        Explore upcoming alumni events, meetups, and opportunities.
-      </p>
+    <div className="min-h-screen bg-slate-100 p-6 flex flex-col items-center">
+      <h1 className="text-3xl font-bold text-slate-800 mb-4">College Events</h1>
 
-      <div className="calendar-container w-full max-w-5xl shadow-lg rounded-xl overflow-hidden bg-white p-6 mb-8">
+      <div className="w-full max-w-5xl bg-white rounded-xl p-5 mb-6 border">
         <Calendar
           onChange={setDate}
           value={date}
-          tileContent={tileContent}
-          className="react-calendar w-full h-[600px] text-blue-900 border-0 text-lg"
+          tileContent={({ date: d, view }) => {
+            if (view !== "month") return null;
+            const dayEvents = eventsByDay.get(d.toDateString()) || [];
+            return dayEvents.length ? <div className="w-2 h-2 bg-blue-600 rounded-full mx-auto mt-1" /> : null;
+          }}
         />
       </div>
 
-      <div className="event-list w-full max-w-5xl bg-white rounded-xl shadow-lg p-6">
-        <h2 className="text-2xl font-semibold text-indigo-800 mb-4">
-          Events on {date.toDateString()}
-        </h2>
-        {events.filter(
-          (e) => new Date(e.date).toDateString() === date.toDateString()
-        ).length === 0 ? (
-          <p className="text-gray-500">No events on this day.</p>
+      <div className="w-full max-w-5xl bg-white rounded-xl border p-5">
+        <h2 className="text-xl font-semibold mb-3">Events on {date.toDateString()}</h2>
+        {selectedEvents.length === 0 ? (
+          <p className="text-slate-500">No events on this date.</p>
         ) : (
           <ul className="space-y-2">
-            {events
-              .filter(
-                (e) => new Date(e.date).toDateString() === date.toDateString()
-              )
-              .map((e, i) => (
-                <li
-                  key={i}
-                  className="p-3 rounded-lg bg-indigo-100 text-red-900 font-medium flex items-center justify-between shadow-sm"
-                >
-                  {e.title}
-                </li>
-              ))}
+            {selectedEvents.map((e) => (
+              <li key={e._id} className="p-3 rounded border bg-slate-50">
+                <p className="font-medium">{e.title}</p>
+                <p className="text-sm text-slate-600">{e.description || "No description"}</p>
+                <p className="text-xs text-slate-500 mt-1">{e.venue || "Venue TBA"} {e.time ? `| ${e.time}` : ""}</p>
+              </li>
+            ))}
           </ul>
         )}
       </div>

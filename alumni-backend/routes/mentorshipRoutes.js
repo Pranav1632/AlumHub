@@ -4,17 +4,14 @@ const {
   createMentorshipRequest,
   acceptMentorshipRequest,
   rejectMentorshipRequest,
+  listMyMentorshipRequests,
 } = require("../controllers/mentorshipController");
 
 const router = express.Router();
 
-// Admin sends mentorship request
-router.post("/request", protect, authorizeRoles("collegeAdmin"), createMentorshipRequest);
-
-// Alumni accepts mentorship request
+router.post("/request", protect, authorizeRoles("admin", "student"), createMentorshipRequest);
 router.post("/:id/accept", protect, authorizeRoles("alumni"), acceptMentorshipRequest);
-
-// Alumni rejects mentorship request
 router.post("/:id/reject", protect, authorizeRoles("alumni"), rejectMentorshipRequest);
+router.get("/my", protect, authorizeRoles("admin", "alumni", "student"), listMyMentorshipRequests);
 
 module.exports = router;

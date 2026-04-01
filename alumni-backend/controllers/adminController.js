@@ -1,17 +1,22 @@
 const User = require("../models/User");
 
-/**
- * Verify a student or alumni by ID
- */
+const normalizeRole = (role) => (role === "collegeAdmin" ? "admin" : role);
+
+const collegeScopedFilter = (req, extra = {}) => ({
+  collegeId: req.user.collegeId,
+  ...extra,
+});
+
 const verifyUser = async (req, res) => {
   try {
-    const target = await User.findById(req.params.id);
-    if (!target) return res.status(404).json({ msg: "User not found" });
+    const target = await User.findOne(
+      collegeScopedFilter(req, { _id: req.params.id })
+    );
 
-    if (!["student", "alumni"].includes(target.role)) {
-      return res
-        .status(400)
-        .json({ msg: `Cannot verify a '${target.role}' via this endpoint` });
+    if (!target) return res.status(404).json({ msg: "User not found in your college" });
+
+    if (!["student", "alumni"].includes(normalizeRole(target.role))) {
+      return res.status(400).json({ msg: `Cannot verify ${target.role}` });
     }
 
     if (target.verified) {
@@ -21,26 +26,13 @@ const verifyUser = async (req, res) => {
     target.verified = true;
     await target.save();
 
-    res.json({
-      msg: "User verified successfully",
-      user: {
-        _id: target._id,
-        name: target.name,
-        role: target.role,
-        email: target.email,
-        prn: target.prn,
-        verified: target.verified,
-      },
-    });
+    return res.json({ msg: "User verified successfully", user: target });
   } catch (err) {
     console.error("Verify user error:", err);
-    res.status(500).json({ msg: "Server error", error: err.message });
+    return res.status(500).json({ msg: "Server error", error: err.message });
   }
 };
 
-/**
- * List pending (unverified) students/alumni
- */
 const listPendingUsers = async (req, res) => {
   try {
     const { role } = req.query;
@@ -49,39 +41,69 @@ const listPendingUsers = async (req, res) => {
         ? role
         : { $in: ["student", "alumni"] };
 
-    const users = await User.find({
-      role: roleFilter,
-      verified: false,
-    }).select("-password");
+    const users = await User.find(
+      collegeScopedFilter(req, {
+        role: roleFilter,
+        verified: false,
+      })
+    ).select("-password");
 
-    res.json({ count: users.length, users });
+    return res.json({ count: users.length, users });
   } catch (err) {
     console.error("Pending list error:", err);
-    res.status(500).json({ msg: "Server error", error: err.message });
+    return res.status(500).json({ msg: "Server error", error: err.message });
   }
 };
 
-/**
- * Get all students
- */
 const getAllStudents = async (req, res) => {
   try {
-    const students = await User.find({ role: "student" }).select("-password");
-    res.json(students);
+    const students = await User.find(
+      collegeScopedFilter(req, { role: "student" })
+    ).select("-password");
+    return res.json(students);
   } catch (err) {
-    res.status(500).json({ message: "Server Error" });
+    return res.status(500).json({ message: "Server Error" });
   }
 };
 
-/**
- * Get all alumni
- */
 const getAllAlumni = async (req, res) => {
   try {
-    const alumni = await User.find({ role: "alumni" }).select("-password");
-    res.json(alumni);
+    const alumni = await User.find(
+      collegeScopedFilter(req, { role: "alumni" })
+    ).select("-password");
+    return res.json(alumni);
   } catch (err) {
-    res.status(500).json({ message: "Server Error" });
+    return res.status(500).json({ message: "Server Error" });
+  }
+};
+
+const blockUser = async (req, res) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      collegeScopedFilter(req, { _id: req.params.id }),
+      { blocked: true },
+      { new: true }
+    ).select("-password");
+
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    return res.json({ msg: "User blocked", user });
+  } catch (err) {
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+};
+
+const unblockUser = async (req, res) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      collegeScopedFilter(req, { _id: req.params.id }),
+      { blocked: false },
+      { new: true }
+    ).select("-password");
+
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    return res.json({ msg: "User unblocked", user });
+  } catch (err) {
+    return res.status(500).json({ msg: "Server error", error: err.message });
   }
 };
 
@@ -90,4 +112,6 @@ module.exports = {
   listPendingUsers,
   getAllStudents,
   getAllAlumni,
+  blockUser,
+  unblockUser,
 };

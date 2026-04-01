@@ -5,20 +5,17 @@ const {
   listPendingUsers,
   getAllStudents,
   getAllAlumni,
+  blockUser,
+  unblockUser,
 } = require("../controllers/adminController");
 
 const router = express.Router();
 
-// Verify student/alumni
-router.put("/verify/:id", protect, authorizeRoles("collegeAdmin"), verifyUser);
-
-// List pending (unverified) users
-router.get("/pending", protect, authorizeRoles("collegeAdmin"), listPendingUsers);
-
-// Get all students
-router.get("/students", protect, authorizeRoles("collegeAdmin"), getAllStudents);
-
-// Get all alumni
-router.get("/alumni", protect, authorizeRoles("collegeAdmin"), getAllAlumni);
+router.put("/verify/:id", protect, authorizeRoles("admin"), verifyUser);
+router.get("/pending", protect, authorizeRoles("admin"), listPendingUsers);
+router.get("/students", protect, authorizeRoles("admin"), getAllStudents);
+router.get("/alumni", protect, authorizeRoles("admin"), getAllAlumni);
+router.put("/block/:id", protect, authorizeRoles("admin"), blockUser);
+router.put("/unblock/:id", protect, authorizeRoles("admin"), unblockUser);
 
 module.exports = router;

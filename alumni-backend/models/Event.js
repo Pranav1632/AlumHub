@@ -2,16 +2,16 @@ const mongoose = require("mongoose");
 
 const eventSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    description: { type: String },
+    collegeId: { type: String, required: true, index: true },
+    title: { type: String, required: true, trim: true },
+    description: { type: String, default: "" },
     date: { type: Date, required: true },
-    time: { type: String }, // e.g., "10:00 AM - 12:00 PM"
-    venue: { type: String },
-     registrationLink: {
-      type: String,
-      required: false, // optional — some events may not need a link
-    },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    time: { type: String, default: "" },
+    venue: { type: String, default: "" },
+    registrationLink: { type: String, required: false },
+    status: { type: String, enum: ["draft", "published"], default: "published" },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    rsvps: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );

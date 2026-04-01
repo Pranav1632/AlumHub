@@ -1,13 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 
-// Layout
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-// Pages
 import Home from "./pages/Home";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
@@ -16,16 +15,13 @@ import AlumniDashboard from "./pages/dashboards/AlumniDashboard";
 import CollegeDashboard from "./pages/dashboards/CollegeDashboard";
 import DiscussionPage from "./pages/DiscussionPage";
 import ChatPage from "./pages/Chatpage";
-import ProtectedRoute from "./components/ProtectedRoute"; // ✅ import
+import AlumniDirectory from "./pages/AlumniDirectory";
+import CalendarPage from "./pages/CalenderPage";
+import ProfilePage from "./pages/ProfilePage";
+import Feedback from "./pages/Feedback";
 
 import "./index.css";
-// import the new page at the top
-import AlumniDirectory from "./pages/AlumniDirectory";
-import JobBoard from "./pages/JobBoard"; // ✅ import the JobBoard page
-import CalendarPage from "./pages/CalenderPage";  // ✅ import the CalendarPage
-import ProfilePage from "./pages/ProfilePage";
-import AlumniProfile from "./pages/AlumniProfile"; // ✅ import at the top
-import Feedback from "./pages/Feedback";
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
@@ -33,49 +29,89 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Header />
         <main style={{ minHeight: "80vh", padding: "20px" }}>
           <Routes>
-            {/* Public routes */}
             <Route path="/" element={<Home />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />
 
-            {/* Dashboards (Protected) */}
             <Route
-              path="/dashboard/student"
+              path="/student/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowRoles={["student"]}>
                   <StudentDashboard />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/dashboard/alumni"
+              path="/alumni/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowRoles={["alumni"]}>
                   <AlumniDashboard />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/dashboard/college"
+              path="/admin/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowRoles={["admin"]}>
                   <CollegeDashboard />
                 </ProtectedRoute>
               }
             />
 
-            {/* Community routes (Public for now, can protect later) */}
-            <Route path="/discussion" element={<DiscussionPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-             {/* Alumni Directory */}
-  <Route path="/alumni-directory" element={<AlumniDirectory />} />
-  <Route path="/job-board" element={<JobBoard />} /> 
-  <Route path="/calendar" element={<CalendarPage />} />
-  <Route path="/events" element={<CalendarPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-      <Route path="/alumni-profile/:id" element={<AlumniProfile />} />
-  <Route path="/feedback" element={<Feedback />} />
+            <Route
+              path="/discussion"
+              element={
+                <ProtectedRoute allowRoles={["student", "alumni", "admin"]}>
+                  <DiscussionPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute allowRoles={["student", "alumni", "admin"]}>
+                  <ChatPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/alumni-directory"
+              element={
+                <ProtectedRoute allowRoles={["student", "admin"]}>
+                  <AlumniDirectory />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/events"
+              element={
+                <ProtectedRoute allowRoles={["student", "alumni", "admin"]}>
+                  <CalendarPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute allowRoles={["student", "alumni", "admin"]}>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/feedback"
+              element={
+                <ProtectedRoute allowRoles={["student", "alumni", "admin"]}>
+                  <Feedback />
+                </ProtectedRoute>
+              }
+            />
 
+            <Route path="/dashboard/student" element={<Navigate to="/student/dashboard" replace />} />
+            <Route path="/dashboard/alumni" element={<Navigate to="/alumni/dashboard" replace />} />
+            <Route path="/dashboard/college" element={<Navigate to="/admin/dashboard" replace />} />
+
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
         <Footer />
