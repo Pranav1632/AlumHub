@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const Message = require("../models/Message");
 const User = require("../models/User");
+const { canMessageDirectly } = require("../utils/chatPermission");
 
 const MAX_MESSAGE_LENGTH = 2000;
 const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
@@ -129,10 +130,21 @@ function chatSocket(io) {
           _id: receiverId,
           collegeId: socket.user.collegeId,
           blocked: false,
-        }).select("_id");
+        }).select("_id role collegeId");
 
         if (!receiver) {
           if (ack) ack({ ok: false, message: "Receiver unavailable" });
+          return;
+        }
+
+        const permission = await canMessageDirectly({
+          collegeId: socket.user.collegeId,
+          senderUser: socket.user,
+          receiverUser: receiver,
+        });
+
+        if (!permission.allowed) {
+          if (ack) ack({ ok: false, message: permission.reason || "Messaging not allowed" });
           return;
         }
 

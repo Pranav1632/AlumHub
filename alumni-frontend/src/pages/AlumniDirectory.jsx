@@ -30,12 +30,22 @@ export default function AlumniDirectory() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return alumni;
-    return alumni.filter(
-      (a) =>
-        a.name?.toLowerCase().includes(q) ||
-        a.email?.toLowerCase().includes(q) ||
-        a.prn?.toLowerCase().includes(q)
-    );
+    return alumni
+      .map((a) => {
+        const name = a.name?.toLowerCase() || "";
+        const email = a.email?.toLowerCase() || "";
+        const prn = a.prn?.toLowerCase() || "";
+        let score = 0;
+        if (name.startsWith(q)) score += 6;
+        if (name.includes(q)) score += 4;
+        if (prn.startsWith(q)) score += 5;
+        if (prn.includes(q)) score += 3;
+        if (email.includes(q)) score += 2;
+        return { item: a, score };
+      })
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.item);
   }, [alumni, search]);
 
   const sendMentorshipRequest = async () => {

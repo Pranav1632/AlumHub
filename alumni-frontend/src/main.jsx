@@ -19,6 +19,7 @@ import AlumniDirectory from "./pages/AlumniDirectory";
 import CalendarPage from "./pages/CalenderPage";
 import ProfilePage from "./pages/ProfilePage";
 import Feedback from "./pages/Feedback";
+import StudentVisitProfilePage from "./pages/StudentVisitProfilePage";
 
 import "./index.css";
 
@@ -95,6 +96,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(
               element={
                 <ProtectedRoute allowRoles={["student", "alumni", "admin"]}>
                   <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile/visit/student/:id"
+              element={
+                <ProtectedRoute allowRoles={["student"]}>
+                  <StudentVisitProfilePage />
                 </ProtectedRoute>
               }
             />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FiCheckCircle, FiUserX } from "react-icons/fi";
 import api from "../../utils/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 export default function CollegeDashboard() {
   const { user } = useAuth();
   const [pendingUsers, setPendingUsers] = useState([]);
+  const [search, setSearch] = useState("");
   const [error, setError] = useState("");
 
   const loadPending = async () => {
@@ -39,6 +40,18 @@ export default function CollegeDashboard() {
     }
   };
 
+  const filteredPendingUsers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return pendingUsers;
+    return pendingUsers.filter((u) => {
+      const name = u.name?.toLowerCase() || "";
+      const email = u.email?.toLowerCase() || "";
+      const prn = u.prn?.toLowerCase() || "";
+      const role = u.role?.toLowerCase() || "";
+      return name.includes(q) || email.includes(q) || prn.includes(q) || role.includes(q);
+    });
+  }, [pendingUsers, search]);
+
   return (
     <div className="max-w-6xl mx-auto py-8 px-2">
       <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
@@ -46,10 +59,16 @@ export default function CollegeDashboard() {
 
       <div className="bg-white rounded-xl border border-slate-200 p-5 mt-6 shadow-sm">
         <h2 className="font-semibold text-slate-800 mb-3">Pending Verification Requests</h2>
-        {pendingUsers.length === 0 && <p className="text-slate-500">No pending users right now.</p>}
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full max-w-md mb-3 border rounded-lg px-3 py-2 text-sm"
+          placeholder="Search pending users by name, role, PRN, email"
+        />
+        {filteredPendingUsers.length === 0 && <p className="text-slate-500">No pending users right now.</p>}
 
         <ul className="space-y-3">
-          {pendingUsers.map((u) => (
+          {filteredPendingUsers.map((u) => (
             <li key={u._id} className="flex flex-col sm:flex-row sm:items-center justify-between border rounded-lg p-3 gap-3">
               <div>
                 <p className="font-medium text-slate-900">{u.name}</p>

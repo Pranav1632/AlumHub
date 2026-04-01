@@ -1,6 +1,9 @@
 const mongoose = require("mongoose");
 const Message = require("../models/Message");
 const User = require("../models/User");
+const StudentProfile = require("../models/StudentProfile");
+const ChatRequest = require("../models/ChatRequest");
+const { canMessageDirectly } = require("../utils/chatPermission");
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
@@ -9,11 +12,45 @@ const MAX_MESSAGE_LENGTH = 2000;
 const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
 const sanitizeText = (text) => (typeof text === "string" ? text.trim() : "");
+const escapeRegex = (value) => String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const parseLimit = (value) => {
   const num = Number.parseInt(value, 10);
   if (Number.isNaN(num) || num <= 0) return DEFAULT_LIMIT;
   return Math.min(num, MAX_LIMIT);
+};
+
+const parseRequestSort = (value) => (value === "oldest" ? { createdAt: 1 } : { createdAt: -1 });
+
+const scoreStudentSearch = (user, profile, q) => {
+  if (!q) return 1;
+
+  const term = q.toLowerCase();
+  const name = (user.name || "").toLowerCase();
+  const email = (user.email || "").toLowerCase();
+  const prn = (user.prn || "").toLowerCase();
+  const branch = (profile?.branch || "").toLowerCase();
+  const year = (profile?.yearOfStudy || "").toLowerCase();
+  const skills = Array.isArray(profile?.skills) ? profile.skills.join(" ").toLowerCase() : "";
+
+  let score = 0;
+
+  if (prn === term) score += 120;
+  if (prn.startsWith(term)) score += 70;
+  if (prn.includes(term)) score += 40;
+
+  if (name === term) score += 90;
+  if (name.startsWith(term)) score += 60;
+  if (name.includes(term)) score += 35;
+
+  if (email.startsWith(term)) score += 20;
+  if (email.includes(term)) score += 10;
+
+  if (branch.includes(term)) score += 16;
+  if (year.includes(term)) score += 10;
+  if (skills.includes(term)) score += 8;
+
+  return score;
 };
 
 const isUserOnline = (io, userId) => {
@@ -55,10 +92,20 @@ exports.sendMessage = async (req, res) => {
       _id: receiverId,
       collegeId: req.user.collegeId,
       blocked: false,
-    }).select("_id");
+    }).select("_id role collegeId");
 
     if (!receiver) {
       return res.status(404).json({ message: "Receiver not found in your college" });
+    }
+
+    const permission = await canMessageDirectly({
+      collegeId: req.user.collegeId,
+      senderUser: req.user,
+      receiverUser: receiver,
+    });
+
+    if (!permission.allowed) {
+      return res.status(403).json({ message: permission.reason || "Messaging is not allowed" });
     }
 
     const io = req.app.get("io");
@@ -90,6 +137,7 @@ exports.getMessages = async (req, res) => {
   try {
     const { userId } = req.params;
     const limit = parseLimit(req.query.limit);
+    const q = sanitizeText(req.query.q);
 
     if (!isValidObjectId(userId)) {
       return res.status(400).json({ message: "Invalid userId format" });
@@ -114,6 +162,10 @@ exports.getMessages = async (req, res) => {
       ],
     };
 
+    if (q) {
+      query.text = { $regex: escapeRegex(q), $options: "i" };
+    }
+
     if (req.query.before) {
       const beforeDate = new Date(req.query.before);
       if (!Number.isNaN(beforeDate.getTime())) {
@@ -130,25 +182,27 @@ exports.getMessages = async (req, res) => {
     const pageMessages = hasMore ? rawMessages.slice(0, limit) : rawMessages;
     const messages = pageMessages.reverse();
 
-    const readResult = await Message.updateMany(
-      {
-        collegeId: req.user.collegeId,
-        sender: userId,
-        receiver: req.user._id,
-        status: { $ne: "read" },
-        isDeleted: false,
-      },
-      {
-        $set: {
-          status: "read",
-          readAt: new Date(),
+    if (!q) {
+      const readResult = await Message.updateMany(
+        {
+          collegeId: req.user.collegeId,
+          sender: userId,
+          receiver: req.user._id,
+          status: { $ne: "read" },
+          isDeleted: false,
         },
-      }
-    );
+        {
+          $set: {
+            status: "read",
+            readAt: new Date(),
+          },
+        }
+      );
 
-    if (readResult.modifiedCount > 0) {
-      const io = req.app.get("io");
-      emitReadReceipt(io, userId, req.user._id);
+      if (readResult.modifiedCount > 0) {
+        const io = req.app.get("io");
+        emitReadReceipt(io, userId, req.user._id);
+      }
     }
 
     return res.json({ messages, hasMore });
@@ -210,6 +264,8 @@ exports.markConversationRead = async (req, res) => {
 exports.getChatContacts = async (req, res) => {
   try {
     const userId = req.user._id;
+    const q = sanitizeText(req.query.q);
+    const queryRegex = q ? new RegExp(escapeRegex(q), "i") : null;
 
     const contactsAgg = await Message.aggregate([
       {
@@ -286,11 +342,348 @@ exports.getChatContacts = async (req, res) => {
           isOnline: isUserOnline(io, contactId),
         };
       })
-      .filter(Boolean);
+      .filter(Boolean)
+      .filter((contact) => {
+        if (!queryRegex) return true;
+        const name = contact.user?.name || "";
+        const email = contact.user?.email || "";
+        const prn = contact.user?.prn || "";
+        const lastMessage = contact.lastMessage || "";
+        return (
+          queryRegex.test(name) ||
+          queryRegex.test(email) ||
+          queryRegex.test(prn) ||
+          queryRegex.test(lastMessage)
+        );
+      });
 
     return res.json({ contacts });
   } catch (error) {
     console.error("getChatContacts error:", error);
     return res.status(500).json({ message: "Failed to load chat contacts" });
+  }
+};
+
+exports.createChatRequest = async (req, res) => {
+  try {
+    if (req.user.role !== "student") {
+      return res.status(403).json({ message: "Only students can send chat requests" });
+    }
+
+    const { receiverId } = req.params;
+    const note = sanitizeText(req.body?.note || "");
+
+    if (!isValidObjectId(receiverId)) {
+      return res.status(400).json({ message: "Invalid receiverId format" });
+    }
+
+    if (String(receiverId) === String(req.user._id)) {
+      return res.status(400).json({ message: "You cannot send request to yourself" });
+    }
+
+    const receiver = await User.findOne({
+      _id: receiverId,
+      collegeId: req.user.collegeId,
+      role: "student",
+      verified: true,
+      blocked: false,
+    }).select("_id name email prn role");
+
+    if (!receiver) {
+      return res.status(404).json({ message: "Student not found in your college" });
+    }
+
+    const accepted = await ChatRequest.findOne({
+      collegeId: req.user.collegeId,
+      status: "accepted",
+      $or: [
+        { requester: req.user._id, receiver: receiver._id },
+        { requester: receiver._id, receiver: req.user._id },
+      ],
+    }).select("_id");
+
+    if (accepted) {
+      return res.status(400).json({ message: "Chat request already accepted. You can message directly." });
+    }
+
+    const pendingOutgoing = await ChatRequest.findOne({
+      collegeId: req.user.collegeId,
+      requester: req.user._id,
+      receiver: receiver._id,
+      status: "pending",
+    }).select("_id");
+
+    if (pendingOutgoing) {
+      return res.status(400).json({ message: "Chat request already sent and pending" });
+    }
+
+    const pendingIncoming = await ChatRequest.findOne({
+      collegeId: req.user.collegeId,
+      requester: receiver._id,
+      receiver: req.user._id,
+      status: "pending",
+    }).select("_id");
+
+    if (pendingIncoming) {
+      return res.status(400).json({ message: "This student already sent you a request. Accept it from requests." });
+    }
+
+    const request = await ChatRequest.create({
+      collegeId: req.user.collegeId,
+      requester: req.user._id,
+      receiver: receiver._id,
+      note: note.slice(0, 300) || undefined,
+      status: "pending",
+    });
+
+    const populated = await ChatRequest.findById(request._id)
+      .populate("requester", "name prn email role")
+      .populate("receiver", "name prn email role");
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(String(receiver._id)).emit("chat:request:new", {
+        request: populated,
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Chat request sent",
+      request: populated,
+    });
+  } catch (error) {
+    console.error("createChatRequest error:", error);
+    return res.status(500).json({ message: "Failed to send chat request" });
+  }
+};
+
+exports.listMyChatRequests = async (req, res) => {
+  try {
+    if (req.user.role !== "student") {
+      return res.status(403).json({ message: "Only students can access chat requests" });
+    }
+
+    const type = sanitizeText(req.query.type || "all");
+    const status = sanitizeText(req.query.status || "");
+    const q = sanitizeText(req.query.q || "");
+
+    const filter = { collegeId: req.user.collegeId };
+    if (type === "incoming") filter.receiver = req.user._id;
+    else if (type === "outgoing") filter.requester = req.user._id;
+    else {
+      filter.$or = [{ requester: req.user._id }, { receiver: req.user._id }];
+    }
+
+    if (status && ["pending", "accepted", "rejected", "cancelled"].includes(status)) {
+      filter.status = status;
+    }
+
+    let requests = await ChatRequest.find(filter)
+      .populate("requester", "name prn email role")
+      .populate("receiver", "name prn email role")
+      .sort(parseRequestSort(req.query.sort));
+
+    if (q) {
+      const regex = new RegExp(escapeRegex(q), "i");
+      requests = requests.filter((r) => {
+        const requesterName = r.requester?.name || "";
+        const requesterPrn = r.requester?.prn || "";
+        const receiverName = r.receiver?.name || "";
+        const receiverPrn = r.receiver?.prn || "";
+        const note = r.note || "";
+        return (
+          regex.test(requesterName) ||
+          regex.test(requesterPrn) ||
+          regex.test(receiverName) ||
+          regex.test(receiverPrn) ||
+          regex.test(note)
+        );
+      });
+    }
+
+    return res.json({
+      count: requests.length,
+      requests,
+    });
+  } catch (error) {
+    console.error("listMyChatRequests error:", error);
+    return res.status(500).json({ message: "Failed to load chat requests" });
+  }
+};
+
+exports.respondChatRequest = async (req, res) => {
+  try {
+    if (req.user.role !== "student") {
+      return res.status(403).json({ message: "Only students can respond to chat requests" });
+    }
+
+    const { requestId } = req.params;
+    const action = sanitizeText(req.body?.action || "").toLowerCase();
+
+    if (!isValidObjectId(requestId)) {
+      return res.status(400).json({ message: "Invalid requestId format" });
+    }
+
+    if (!["accepted", "rejected"].includes(action)) {
+      return res.status(400).json({ message: "Action must be accepted or rejected" });
+    }
+
+    const request = await ChatRequest.findOne({
+      _id: requestId,
+      collegeId: req.user.collegeId,
+      receiver: req.user._id,
+      status: "pending",
+    });
+
+    if (!request) {
+      return res.status(404).json({ message: "Pending chat request not found" });
+    }
+
+    request.status = action;
+    request.respondedAt = new Date();
+    await request.save();
+
+    const populated = await ChatRequest.findById(request._id)
+      .populate("requester", "name prn email role")
+      .populate("receiver", "name prn email role");
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(String(request.requester)).emit("chat:request:update", {
+        request: populated,
+      });
+      io.to(String(request.receiver)).emit("chat:request:update", {
+        request: populated,
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `Chat request ${action}`,
+      request: populated,
+    });
+  } catch (error) {
+    console.error("respondChatRequest error:", error);
+    return res.status(500).json({ message: "Failed to respond to chat request" });
+  }
+};
+
+exports.getChatRequestStatusWithUser = async (req, res) => {
+  try {
+    if (req.user.role !== "student") {
+      return res.status(403).json({ message: "Only students can check chat request status" });
+    }
+
+    const { userId } = req.params;
+    if (!isValidObjectId(userId)) {
+      return res.status(400).json({ message: "Invalid userId format" });
+    }
+
+    if (String(userId) === String(req.user._id)) {
+      return res.json({ status: "self", request: null });
+    }
+
+    const targetUser = await User.findOne({
+      _id: userId,
+      collegeId: req.user.collegeId,
+      role: "student",
+      verified: true,
+      blocked: false,
+    }).select("_id");
+
+    if (!targetUser) {
+      return res.status(404).json({ message: "Student not found in your college" });
+    }
+
+    const latest = await ChatRequest.findOne({
+      collegeId: req.user.collegeId,
+      $or: [
+        { requester: req.user._id, receiver: targetUser._id },
+        { requester: targetUser._id, receiver: req.user._id },
+      ],
+    })
+      .sort({ createdAt: -1 })
+      .populate("requester", "name prn email role")
+      .populate("receiver", "name prn email role");
+
+    if (!latest) {
+      return res.json({ status: "none", request: null });
+    }
+
+    if (latest.status === "pending") {
+      if (String(latest.requester?._id) === String(req.user._id)) {
+        return res.json({ status: "pending_outgoing", request: latest });
+      }
+      return res.json({ status: "pending_incoming", request: latest });
+    }
+
+    return res.json({ status: latest.status, request: latest });
+  } catch (error) {
+    console.error("getChatRequestStatusWithUser error:", error);
+    return res.status(500).json({ message: "Failed to get chat request status" });
+  }
+};
+
+exports.searchStudentsForChat = async (req, res) => {
+  try {
+    if (req.user.role !== "student") {
+      return res.status(403).json({ message: "Only students can search student chat directory" });
+    }
+
+    const q = sanitizeText(req.query.q);
+    const limit = Math.min(Number.parseInt(req.query.limit || "20", 10) || 20, 50);
+    const regex = q ? new RegExp(escapeRegex(q), "i") : null;
+
+    const userQuery = {
+      collegeId: req.user.collegeId,
+      role: "student",
+      blocked: false,
+      verified: true,
+      _id: { $ne: req.user._id },
+    };
+
+    if (regex) {
+      userQuery.$or = [{ name: regex }, { email: regex }, { prn: regex }];
+    }
+
+    const candidates = await User.find(userQuery)
+      .select("name email prn role collegeId")
+      .limit(200)
+      .lean();
+
+    const candidateIds = candidates.map((u) => u._id);
+    const profiles = await StudentProfile.find({
+      user: { $in: candidateIds },
+      collegeId: req.user.collegeId,
+    })
+      .select("user branch yearOfStudy graduationYear skills interests profileImage")
+      .lean();
+
+    const profileMap = new Map(profiles.map((p) => [String(p.user), p]));
+
+    const ranked = candidates
+      .map((u) => {
+        const profile = profileMap.get(String(u._id)) || null;
+        return {
+          user: u,
+          profile,
+          score: scoreStudentSearch(u, profile, q),
+        };
+      })
+      .filter((item) => item.score > 0)
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return String(a.user.name || "").localeCompare(String(b.user.name || ""));
+      })
+      .slice(0, limit);
+
+    return res.json({
+      count: ranked.length,
+      students: ranked,
+    });
+  } catch (error) {
+    console.error("searchStudentsForChat error:", error);
+    return res.status(500).json({ message: "Failed to search students for chat" });
   }
 };

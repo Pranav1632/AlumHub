@@ -1,6 +1,6 @@
 const express = require('express');
-const { getMe, updateMe } = require('../controllers/userController');
-const { protect } = require('../middleware/authMiddleware');
+const { getMe, updateMe, getStudentVisitProfile, getPublicProfile } = require('../controllers/userController');
+const { protect, authorizeRoles } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -9,5 +9,7 @@ router.get('/me', protect, getMe);
 
 // Update profile
 router.put('/update', protect, updateMe);
+router.get('/visit/student/:id', protect, authorizeRoles("student"), getStudentVisitProfile);
+router.get('/public/:id', protect, getPublicProfile);
 
 module.exports = router;
