@@ -28,7 +28,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <AuthProvider>
       <BrowserRouter>
         <Header />
-        <main style={{ minHeight: "80vh", padding: "20px" }}>
+        <main className="min-h-[80vh] px-2 py-3 sm:px-4 md:px-6">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/signup" element={<Signup />} />

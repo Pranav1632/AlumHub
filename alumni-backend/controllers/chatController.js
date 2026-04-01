@@ -589,6 +589,111 @@ exports.respondChatRequest = async (req, res) => {
   }
 };
 
+exports.cancelChatRequest = async (req, res) => {
+  try {
+    if (req.user.role !== "student") {
+      return res.status(403).json({ message: "Only students can cancel chat requests" });
+    }
+
+    const { requestId } = req.params;
+    if (!isValidObjectId(requestId)) {
+      return res.status(400).json({ message: "Invalid requestId format" });
+    }
+
+    const request = await ChatRequest.findOne({
+      _id: requestId,
+      collegeId: req.user.collegeId,
+      requester: req.user._id,
+      status: "pending",
+    });
+
+    if (!request) {
+      return res.status(404).json({ message: "Pending outgoing chat request not found" });
+    }
+
+    request.status = "cancelled";
+    request.respondedAt = new Date();
+    await request.save();
+
+    const populated = await ChatRequest.findById(request._id)
+      .populate("requester", "name prn email role")
+      .populate("receiver", "name prn email role");
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(String(request.requester)).emit("chat:request:update", { request: populated });
+      io.to(String(request.receiver)).emit("chat:request:update", { request: populated });
+    }
+
+    await notifyUser({
+      io,
+      collegeId: req.user.collegeId,
+      userId: request.receiver,
+      type: "chat_request_update",
+      title: "Chat Request Cancelled",
+      message: `${req.user.name} cancelled the chat request.`,
+      meta: { chatRequestId: request._id, status: "cancelled" },
+    });
+
+    return res.json({
+      success: true,
+      message: "Chat request cancelled",
+      request: populated,
+    });
+  } catch (error) {
+    console.error("cancelChatRequest error:", error);
+    return res.status(500).json({ message: "Failed to cancel chat request" });
+  }
+};
+
+exports.removeChatRequest = async (req, res) => {
+  try {
+    if (req.user.role !== "student") {
+      return res.status(403).json({ message: "Only students can remove chat requests" });
+    }
+
+    const { requestId } = req.params;
+    if (!isValidObjectId(requestId)) {
+      return res.status(400).json({ message: "Invalid requestId format" });
+    }
+
+    const request = await ChatRequest.findOne({
+      _id: requestId,
+      collegeId: req.user.collegeId,
+      $or: [{ requester: req.user._id }, { receiver: req.user._id }],
+    });
+
+    if (!request) {
+      return res.status(404).json({ message: "Chat request not found" });
+    }
+
+    if (request.status === "accepted") {
+      return res.status(400).json({ message: "Cannot remove accepted request. Chat is active." });
+    }
+
+    await ChatRequest.deleteOne({ _id: request._id });
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(String(request.requester)).emit("chat:request:removed", {
+        requestId: String(request._id),
+      });
+      io.to(String(request.receiver)).emit("chat:request:removed", {
+        requestId: String(request._id),
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Chat request removed",
+      requestId: String(request._id),
+    });
+  } catch (error) {
+    console.error("removeChatRequest error:", error);
+    return res.status(500).json({ message: "Failed to remove chat request" });
+  }
+};
+
 exports.getChatRequestStatusWithUser = async (req, res) => {
   try {
     if (req.user.role !== "student") {

@@ -1,6 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
+import {
+  FiArrowLeft,
+  FiChevronDown,
+  FiChevronRight,
+  FiMessageSquare,
+  FiRefreshCw,
+  FiUsers,
+} from "react-icons/fi";
 import api from "../utils/axiosInstance";
 import { getErrorMessage } from "../utils/errorUtils";
 import { useAuth } from "../context/AuthContext";
@@ -51,8 +59,10 @@ export default function ChatPage() {
   const [contactSearch, setContactSearch] = useState("");
   const [messageSearch, setMessageSearch] = useState("");
   const [debouncedMessageSearch, setDebouncedMessageSearch] = useState("");
-  const [requestSearch, setRequestSearch] = useState("");
   const [chatRequests, setChatRequests] = useState([]);
+  const [mobilePanel, setMobilePanel] = useState("contacts");
+  const [showIncomingRequests, setShowIncomingRequests] = useState(true);
+  const [showOutgoingRequests, setShowOutgoingRequests] = useState(true);
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -113,39 +123,20 @@ export default function ChatPage() {
       .map((item) => item.contact);
   }, [contacts, contactSearch]);
 
-  const filteredRequests = useMemo(() => {
-    const q = requestSearch.trim().toLowerCase();
-    if (!q) return chatRequests;
-    return chatRequests.filter((req) => {
-      const requesterName = req.requester?.name?.toLowerCase() || "";
-      const receiverName = req.receiver?.name?.toLowerCase() || "";
-      const requesterPrn = req.requester?.prn?.toLowerCase() || "";
-      const receiverPrn = req.receiver?.prn?.toLowerCase() || "";
-      const note = req.note?.toLowerCase() || "";
-      return (
-        requesterName.includes(q) ||
-        receiverName.includes(q) ||
-        requesterPrn.includes(q) ||
-        receiverPrn.includes(q) ||
-        note.includes(q)
-      );
-    });
-  }, [chatRequests, requestSearch]);
-
   const incomingPending = useMemo(
     () =>
-      filteredRequests.filter(
+      chatRequests.filter(
         (r) => r.status === "pending" && normalizeId(r.receiver?._id) === normalizeId(meId)
       ),
-    [filteredRequests, meId]
+    [chatRequests, meId]
   );
 
   const outgoingPending = useMemo(
     () =>
-      filteredRequests.filter(
+      chatRequests.filter(
         (r) => r.status === "pending" && normalizeId(r.requester?._id) === normalizeId(meId)
       ),
-    [filteredRequests, meId]
+    [chatRequests, meId]
   );
 
   const addOrActivateContact = useCallback((otherUser) => {
@@ -169,6 +160,9 @@ export default function ChatPage() {
     });
 
     setActiveContactId(otherId);
+    if (window.innerWidth < 768) {
+      setMobilePanel("chat");
+    }
   }, []);
 
   const upsertMessage = useCallback((incomingMessage) => {
@@ -262,6 +256,31 @@ export default function ChatPage() {
     },
     [addOrActivateContact]
   );
+
+  const cancelRequest = useCallback(async (requestId) => {
+    try {
+      const res = await api.post(`/chat/request/${requestId}/cancel`);
+      const updatedReq = res.data?.request;
+      if (updatedReq?._id) {
+        setChatRequests((prev) =>
+          prev.map((req) => (normalizeId(req._id) === normalizeId(updatedReq._id) ? updatedReq : req))
+        );
+      } else {
+        setChatRequests((prev) => prev.filter((req) => normalizeId(req._id) !== normalizeId(requestId)));
+      }
+    } catch (err) {
+      setError(getErrorMessage(err, "Could not cancel request"));
+    }
+  }, []);
+
+  const removeRequest = useCallback(async (requestId) => {
+    try {
+      await api.delete(`/chat/request/${requestId}`);
+      setChatRequests((prev) => prev.filter((req) => normalizeId(req._id) !== normalizeId(requestId)));
+    } catch (err) {
+      setError(getErrorMessage(err, "Could not remove request"));
+    }
+  }, []);
 
   const fetchMessages = useCallback(
     async (contactId, options = { appendHistory: false, before: "", query: "" }) => {
@@ -389,6 +408,14 @@ export default function ChatPage() {
     fetchContacts();
     fetchRequests();
   }, [fetchContacts, fetchRequests]);
+
+  useEffect(() => {
+    if (!isStudent) return undefined;
+    const timer = setInterval(() => {
+      fetchRequests();
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [fetchRequests, isStudent]);
 
   useEffect(() => {
     if (!isStudent) return;
@@ -569,6 +596,11 @@ export default function ChatPage() {
       });
     });
 
+    socket.on("chat:request:removed", ({ requestId }) => {
+      if (!requestId) return;
+      setChatRequests((prev) => prev.filter((r) => normalizeId(r._id) !== normalizeId(requestId)));
+    });
+
     return () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
@@ -591,259 +623,370 @@ export default function ChatPage() {
     }, 1200);
   };
 
+  const openContactConversation = (contactId) => {
+    setActiveContactId(contactId);
+    if (window.innerWidth < 768) {
+      setMobilePanel("chat");
+    }
+  };
+
+  const showContactsPanel = () => {
+    setMobilePanel("contacts");
+  };
+
   return (
-    <div className="max-w-7xl mx-auto h-[calc(100vh-180px)] min-h-[580px] rounded-2xl border bg-white shadow overflow-hidden grid grid-cols-1 md:grid-cols-[340px,1fr]">
-      <aside className="border-r bg-slate-50 flex flex-col">
-        <div className="p-4 border-b bg-white">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-slate-800">Messages</h2>
-            <span className={`text-xs font-medium ${socketConnected ? "text-emerald-600" : "text-amber-600"}`}>
-              {socketConnected ? "Live" : "Reconnecting"}
-            </span>
+    <div className="max-w-7xl mx-auto px-2 sm:px-4 pb-2">
+      <div className="md:hidden mb-2 flex items-center gap-2">
+        <button
+          onClick={() => setMobilePanel("contacts")}
+          className={`flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border ${
+            mobilePanel === "contacts" ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-700 border-slate-300"
+          }`}
+        >
+          <FiUsers size={15} /> Chats
+        </button>
+        <button
+          onClick={() => setMobilePanel("chat")}
+          className={`flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border ${
+            mobilePanel === "chat" ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-700 border-slate-300"
+          }`}
+        >
+          <FiMessageSquare size={15} /> Conversation
+        </button>
+      </div>
+
+      <div className="h-[calc(100dvh-148px)] min-h-[500px] md:h-[calc(100dvh-190px)] md:min-h-[540px] rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden md:grid md:grid-cols-[340px,1fr]">
+        <aside className={`${mobilePanel === "chat" ? "hidden" : "flex"} md:flex flex-col bg-slate-50 border-r border-slate-200`}>
+          <div className="p-4 border-b border-slate-200 bg-white">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-slate-800">Messages</h2>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-medium ${socketConnected ? "text-emerald-600" : "text-amber-600"}`}>
+                  {socketConnected ? "Live" : "Reconnecting"}
+                </span>
+                <button
+                  onClick={fetchContacts}
+                  className="inline-flex items-center justify-center h-7 w-7 rounded border border-slate-300 hover:bg-slate-100"
+                  title="Refresh chats"
+                >
+                  <FiRefreshCw size={13} />
+                </button>
+              </div>
+            </div>
+            <input
+              value={contactSearch}
+              onChange={(e) => setContactSearch(e.target.value)}
+              placeholder="Search by name / email / PRN"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
-          <input
-            value={contactSearch}
-            onChange={(e) => setContactSearch(e.target.value)}
-            placeholder="Search by name / email / PRN"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {loadingContacts && <p className="text-xs text-slate-500 p-2">Loading conversations...</p>}
+            {!loadingContacts && filteredContacts.length === 0 && (
+              <p className="text-sm text-slate-500 p-2">No conversations found.</p>
+            )}
+
+            {filteredContacts.map((contact) => {
+              const cid = normalizeId(contact.user?._id);
+              const isActive = normalizeId(activeContactId) === cid;
+              const initials = (contact.user?.name || "?")
+                .split(" ")
+                .map((part) => part[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase();
+
+              return (
+                <button
+                  key={cid}
+                  type="button"
+                  onClick={() => openContactConversation(cid)}
+                  className={`w-full text-left rounded-xl p-3 border transition ${
+                    isActive
+                      ? "bg-blue-50 border-blue-300"
+                      : "bg-white border-transparent hover:border-slate-200"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="relative">
+                      <div className="h-10 w-10 rounded-full bg-blue-600 text-white text-sm font-semibold flex items-center justify-center">
+                        {initials}
+                      </div>
+                      <span
+                        className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${
+                          contact.isOnline ? "bg-emerald-500" : "bg-slate-300"
+                        }`}
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center gap-2">
+                        <p className="font-medium text-slate-800 truncate">{contact.user?.name || "Unknown"}</p>
+                        <p className="text-[11px] text-slate-500 whitespace-nowrap">{formatChatTime(contact.lastAt)}</p>
+                      </div>
+                      <p className="text-xs text-slate-500 truncate mt-0.5">{contact.lastMessage || "No messages yet"}</p>
+                    </div>
+
+                    {contact.unreadCount > 0 && (
+                      <span className="inline-flex min-w-5 px-1.5 h-5 rounded-full bg-blue-600 text-white text-[11px] items-center justify-center">
+                        {contact.unreadCount > 99 ? "99+" : contact.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
 
           {isStudent && (
-            <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-2">
-              <div className="flex items-center justify-between text-xs mb-2">
-                <span className="font-medium text-slate-700">Chat Requests</span>
-                <span className="text-slate-500">
-                  In: {incomingPending.length} | Out: {outgoingPending.length}
-                </span>
-              </div>
-              <input
-                value={requestSearch}
-                onChange={(e) => setRequestSearch(e.target.value)}
-                placeholder="Search requests"
-                className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs mb-2"
-              />
-
-              <div className="max-h-36 overflow-y-auto space-y-2">
-                {loadingRequests && <p className="text-[11px] text-slate-500">Loading requests...</p>}
-                {!loadingRequests && incomingPending.length === 0 && outgoingPending.length === 0 && (
-                  <p className="text-[11px] text-slate-500">No chat requests yet.</p>
-                )}
-
-                {incomingPending.map((req) => (
-                  <div key={normalizeId(req._id)} className="rounded border border-slate-200 bg-white p-2">
-                    <p className="text-xs font-medium text-slate-800 truncate">
-                      {req.requester?.name} ({req.requester?.prn || "PRN"})
-                    </p>
-                    {req.note && <p className="text-[11px] text-slate-500 line-clamp-2">{req.note}</p>}
-                    <div className="mt-2 flex gap-1">
-                      <button
-                        onClick={() => respondRequest(req._id, "accepted")}
-                        className="text-[11px] px-2 py-1 rounded bg-emerald-600 text-white"
-                      >
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => respondRequest(req._id, "rejected")}
-                        className="text-[11px] px-2 py-1 rounded border border-red-300 text-red-600"
-                      >
-                        Reject
-                      </button>
-                      <button
-                        onClick={() => navigate(`/profile/visit/${normalizeId(req.requester?._id)}`)}
-                        className="text-[11px] px-2 py-1 rounded border border-slate-300"
-                      >
-                        Profile
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {outgoingPending.map((req) => (
-                  <div key={normalizeId(req._id)} className="rounded border border-slate-200 bg-white p-2">
-                    <p className="text-[11px] text-slate-700 truncate">
-                      Pending with {req.receiver?.name} ({req.receiver?.prn || "PRN"})
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {loadingContacts && <p className="text-xs text-slate-500 p-2">Loading conversations...</p>}
-          {!loadingContacts && filteredContacts.length === 0 && (
-            <p className="text-sm text-slate-500 p-2">No conversations found.</p>
-          )}
-
-          {filteredContacts.map((contact) => {
-            const cid = normalizeId(contact.user?._id);
-            const isActive = normalizeId(activeContactId) === cid;
-            const initials = (contact.user?.name || "?")
-              .split(" ")
-              .map((part) => part[0])
-              .join("")
-              .slice(0, 2)
-              .toUpperCase();
-
-            return (
-              <button
-                key={cid}
-                type="button"
-                onClick={() => setActiveContactId(cid)}
-                className={`w-full text-left rounded-xl p-3 border transition ${
-                  isActive ? "bg-blue-50 border-blue-300" : "bg-white border-transparent hover:border-slate-200"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="relative">
-                    <div className="h-10 w-10 rounded-full bg-blue-600 text-white text-sm font-semibold flex items-center justify-center">
-                      {initials}
-                    </div>
-                    <span
-                      className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${
-                        contact.isOnline ? "bg-emerald-500" : "bg-slate-300"
-                      }`}
-                    />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center gap-2">
-                      <p className="font-medium text-slate-800 truncate">{contact.user?.name || "Unknown"}</p>
-                      <p className="text-[11px] text-slate-500 whitespace-nowrap">{formatChatTime(contact.lastAt)}</p>
-                    </div>
-                    <p className="text-xs text-slate-500 truncate mt-0.5">{contact.lastMessage || "No messages yet"}</p>
-                  </div>
-
-                  {contact.unreadCount > 0 && (
-                    <span className="inline-flex min-w-5 px-1.5 h-5 rounded-full bg-blue-600 text-white text-[11px] items-center justify-center">
-                      {contact.unreadCount > 99 ? "99+" : contact.unreadCount}
-                    </span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </aside>
-
-      <main className="flex flex-col bg-white">
-        {!activeContact && (
-          <div className="h-full flex items-center justify-center text-slate-500">
-            Select a conversation to start chatting.
-          </div>
-        )}
-
-        {activeContact && (
-          <>
-            <header className="border-b p-4 flex items-center justify-between bg-white">
-              <div>
-                <h3 className="font-semibold text-slate-900">{activeContact.user?.name}</h3>
-                <p className="text-xs text-slate-500">
-                  {typingByContact[normalizeId(activeContact.user?._id)]
-                    ? "Typing..."
-                    : activeContact.isOnline
-                      ? "Online"
-                      : "Offline"}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-slate-500">{activeContact.user?.email}</div>
+            <div className="border-t border-slate-200 p-2 bg-white">
+              <div className="flex items-center justify-between mb-2 gap-2">
+                <p className="text-xs font-semibold text-slate-700">Chat Requests</p>
                 <button
-                  onClick={() => navigate(`/profile/visit/${normalizeId(activeContact.user?._id)}`)}
-                  className="text-xs px-2 py-1 rounded border border-slate-300 hover:bg-slate-100"
+                  onClick={fetchRequests}
+                  className="text-[11px] px-2 py-1 rounded border border-slate-300 hover:bg-slate-100"
                 >
-                  View Profile
+                  Refresh
                 </button>
               </div>
-            </header>
-
-            <div className="px-4 py-2 border-b bg-slate-50">
-              <input
-                value={messageSearch}
-                onChange={(e) => setMessageSearch(e.target.value)}
-                placeholder="Search in this conversation"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-4 py-3 bg-gradient-to-b from-slate-50 to-white">
-              {hasMore && (
-                <div className="flex justify-center mb-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      fetchMessages(activeContactId, {
-                        appendHistory: true,
-                        before: oldestCursor,
-                        query: debouncedMessageSearch,
-                      })
-                    }
-                    className="text-xs border border-slate-300 rounded-full px-3 py-1 hover:bg-slate-100"
-                    disabled={loadingMessages}
-                  >
-                    {loadingMessages ? "Loading..." : "Load older messages"}
-                  </button>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                {messages.map((msg) => {
-                  const mine = normalizeId(msg.sender) === normalizeId(meId);
-                  return (
-                    <div key={normalizeId(msg._id) || msg.clientId} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`max-w-[75%] rounded-2xl px-3 py-2 shadow-sm ${
-                          mine
-                            ? "bg-blue-600 text-white rounded-br-sm"
-                            : "bg-white border border-slate-200 text-slate-800 rounded-bl-sm"
-                        }`}
-                      >
-                        <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
-                        <div className="mt-1 flex items-center gap-2 justify-end">
-                          <span className={`text-[10px] ${mine ? "text-blue-100" : "text-slate-500"}`}>
-                            {formatChatTime(msg.createdAt)}
-                          </span>
-                          {mine && <span className="text-[10px] text-blue-100">{statusLabel(msg.status)}</span>}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div ref={messagesEndRef} />
-            </div>
-
-            <footer className="border-t p-3 bg-white">
-              <div className="flex items-end gap-2">
-                <textarea
-                  rows={2}
-                  value={input}
-                  onChange={(e) => onTypingChange(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      onSend();
-                    }
-                  }}
-                  placeholder="Type a message..."
-                  className="flex-1 resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="max-h-44 overflow-y-auto space-y-2 pr-1">
                 <button
                   type="button"
-                  onClick={onSend}
-                  className="h-10 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300"
-                  disabled={!input.trim()}
+                  onClick={() => setShowIncomingRequests((v) => !v)}
+                  className="w-full text-left text-[11px] px-2 py-1.5 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 inline-flex items-center justify-between"
                 >
-                  Send
+                  <span className="font-medium text-slate-700">
+                    Received ({incomingPending.length})
+                  </span>
+                  {showIncomingRequests ? <FiChevronDown size={13} /> : <FiChevronRight size={13} />}
                 </button>
-              </div>
-            </footer>
-          </>
-        )}
 
-        {error && <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">{error}</div>}
-      </main>
+                {showIncomingRequests && (
+                  <>
+                    {loadingRequests && <p className="text-[11px] text-slate-500">Loading requests...</p>}
+                    {!loadingRequests && incomingPending.length === 0 && (
+                      <p className="text-[11px] text-slate-500 px-1">No received requests.</p>
+                    )}
+                    {incomingPending.map((req) => (
+                      <div key={normalizeId(req._id)} className="rounded border border-slate-200 bg-slate-50 p-2">
+                        <p className="text-xs font-medium text-slate-800 truncate">
+                          {req.requester?.name} ({req.requester?.prn || "PRN"})
+                        </p>
+                        {req.note && <p className="text-[11px] text-slate-500 break-words mt-0.5">{req.note}</p>}
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          <button
+                            onClick={() => respondRequest(req._id, "accepted")}
+                            className="text-[11px] px-2 py-1 rounded bg-emerald-600 text-white"
+                          >
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => respondRequest(req._id, "rejected")}
+                            className="text-[11px] px-2 py-1 rounded border border-red-300 text-red-600"
+                          >
+                            Reject
+                          </button>
+                          <button
+                            onClick={() => navigate(`/profile/visit/${normalizeId(req.requester?._id)}`)}
+                            className="text-[11px] px-2 py-1 rounded border border-slate-300"
+                          >
+                            Profile
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowOutgoingRequests((v) => !v)}
+                  className="w-full text-left text-[11px] px-2 py-1.5 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 inline-flex items-center justify-between"
+                >
+                  <span className="font-medium text-slate-700">
+                    Sent ({outgoingPending.length})
+                  </span>
+                  {showOutgoingRequests ? <FiChevronDown size={13} /> : <FiChevronRight size={13} />}
+                </button>
+
+                {showOutgoingRequests && (
+                  <>
+                    {!loadingRequests && outgoingPending.length === 0 && (
+                      <p className="text-[11px] text-slate-500 px-1">No sent requests.</p>
+                    )}
+                    {outgoingPending.map((req) => (
+                      <div key={normalizeId(req._id)} className="rounded border border-slate-200 bg-slate-50 p-2">
+                        <p className="text-xs font-medium text-slate-800 truncate">
+                          {req.receiver?.name} ({req.receiver?.prn || "PRN"})
+                        </p>
+                        {req.note && <p className="text-[11px] text-slate-500 break-words mt-0.5">{req.note}</p>}
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          <button
+                            onClick={() => cancelRequest(req._id)}
+                            className="text-[11px] px-2 py-1 rounded border border-amber-300 text-amber-700"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => removeRequest(req._id)}
+                            className="text-[11px] px-2 py-1 rounded border border-slate-300"
+                          >
+                            Remove
+                          </button>
+                          <button
+                            onClick={() => navigate(`/profile/visit/${normalizeId(req.receiver?._id)}`)}
+                            className="text-[11px] px-2 py-1 rounded border border-slate-300"
+                          >
+                            Profile
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </aside>
+
+        <main className={`${mobilePanel === "contacts" ? "hidden" : "flex"} md:flex flex-col bg-white`}>
+          {!activeContact && (
+            <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-3 p-6">
+              <p>Select a conversation to start chatting.</p>
+              <button
+                onClick={showContactsPanel}
+                className="md:hidden inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 text-sm"
+              >
+                <FiArrowLeft size={14} /> Back To Chats
+              </button>
+            </div>
+          )}
+
+          {activeContact && (
+            <>
+              <header className="border-b border-slate-200 p-3 sm:p-4 flex items-center justify-between bg-white">
+                <div className="flex items-center gap-3 min-w-0">
+                  <button
+                    onClick={showContactsPanel}
+                    className="md:hidden inline-flex items-center justify-center h-8 w-8 rounded border border-slate-300 hover:bg-slate-100"
+                    title="Back"
+                  >
+                    <FiArrowLeft size={14} />
+                  </button>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-slate-900 truncate">{activeContact.user?.name}</h3>
+                    <p className="text-xs text-slate-500">
+                      {typingByContact[normalizeId(activeContact.user?._id)]
+                        ? "Typing..."
+                        : activeContact.isOnline
+                          ? "Online"
+                          : "Offline"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="hidden sm:block text-xs text-slate-500 truncate max-w-40">{activeContact.user?.email}</div>
+                  <button
+                    onClick={() => navigate(`/profile/visit/${normalizeId(activeContact.user?._id)}`)}
+                    className="text-xs px-2 py-1 rounded border border-slate-300 hover:bg-slate-100"
+                  >
+                    View Profile
+                  </button>
+                </div>
+              </header>
+
+              <div className="px-3 sm:px-4 py-2 border-b border-slate-200 bg-slate-50">
+                <input
+                  value={messageSearch}
+                  onChange={(e) => setMessageSearch(e.target.value)}
+                  placeholder="Search in this conversation"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 bg-gradient-to-b from-slate-50 to-white">
+                {hasMore && (
+                  <div className="flex justify-center mb-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        fetchMessages(activeContactId, {
+                          appendHistory: true,
+                          before: oldestCursor,
+                          query: debouncedMessageSearch,
+                        })
+                      }
+                      className="text-xs border border-slate-300 rounded-full px-3 py-1 hover:bg-slate-100"
+                      disabled={loadingMessages}
+                    >
+                      {loadingMessages ? "Loading..." : "Load older messages"}
+                    </button>
+                  </div>
+                )}
+
+                {messages.length === 0 && (
+                  <p className="text-sm text-slate-500 text-center py-8">No messages yet. Say hello.</p>
+                )}
+
+                <div className="space-y-2">
+                  {messages.map((msg) => {
+                    const mine = normalizeId(msg.sender) === normalizeId(meId);
+                    return (
+                      <div key={normalizeId(msg._id) || msg.clientId} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                        <div
+                          className={`max-w-[82%] sm:max-w-[75%] rounded-2xl px-3 py-2 shadow-sm ${
+                            mine
+                              ? "bg-blue-600 text-white rounded-br-sm"
+                              : "bg-white border border-slate-200 text-slate-800 rounded-bl-sm"
+                          }`}
+                        >
+                          <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
+                          <div className="mt-1 flex items-center gap-2 justify-end">
+                            <span className={`text-[10px] ${mine ? "text-blue-100" : "text-slate-500"}`}>
+                              {formatChatTime(msg.createdAt)}
+                            </span>
+                            {mine && <span className="text-[10px] text-blue-100">{statusLabel(msg.status)}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div ref={messagesEndRef} />
+              </div>
+
+              <footer className="border-t border-slate-200 p-3 bg-white">
+                <div className="flex items-end gap-2">
+                  <textarea
+                    rows={2}
+                    value={input}
+                    onChange={(e) => onTypingChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        onSend();
+                      }
+                    }}
+                    placeholder="Type a message..."
+                    className="flex-1 resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={onSend}
+                    className="h-10 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300"
+                    disabled={!input.trim()}
+                  >
+                    Send
+                  </button>
+                </div>
+              </footer>
+            </>
+          )}
+
+          {error && <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">{error}</div>}
+        </main>
+      </div>
     </div>
   );
 }

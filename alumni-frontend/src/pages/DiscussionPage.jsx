@@ -27,6 +27,7 @@ export default function DiscussionPage() {
   const [postText, setPostText] = useState("");
   const [replyDrafts, setReplyDrafts] = useState({});
   const [replyOpenFor, setReplyOpenFor] = useState({});
+  const [replyListOpenFor, setReplyListOpenFor] = useState({});
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState("");
 
@@ -121,13 +122,14 @@ export default function DiscussionPage() {
     const postId = normalizeId(post._id);
     const likes = Array.isArray(post.likes) ? post.likes : [];
     const upvotes = Array.isArray(post.upvotes) ? post.upvotes : [];
+    const replies = Array.isArray(post.replies) ? post.replies : [];
     const likedByMe = likes.some((id) => normalizeId(id) === normalizeId(meId));
     const upvotedByMe = upvotes.some((id) => normalizeId(id) === normalizeId(meId));
     const userName = post.user?.name || "User";
     const avatar = avatarFromName(userName);
 
     return (
-      <div key={postId} className={`rounded-xl border border-slate-200 bg-white p-4 ${isReply ? "ml-8 mt-2" : ""}`}>
+      <div key={postId} className={`rounded-xl border border-slate-200 bg-white p-4 ${isReply ? "ml-3 sm:ml-8 mt-2" : ""}`}>
         <div className="flex items-start gap-3">
           <button
             onClick={() => navigate(`/profile/visit/${normalizeId(post.user?._id)}`)}
@@ -177,6 +179,20 @@ export default function DiscussionPage() {
                   <FiMessageCircle size={14} /> Reply
                 </button>
               )}
+              {!isReply && replies.length > 0 && (
+                <button
+                  onClick={() =>
+                    setReplyListOpenFor((prev) => ({
+                      ...prev,
+                      [postId]: !prev[postId],
+                    }))
+                  }
+                  className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50"
+                  title="Show replies"
+                >
+                  <FiMessageCircle size={14} /> {replies.length}
+                </button>
+              )}
             </div>
 
             {!isReply && replyOpenFor[postId] && (
@@ -199,9 +215,9 @@ export default function DiscussionPage() {
           </div>
         </div>
 
-        {!isReply && Array.isArray(post.replies) && post.replies.length > 0 && (
+        {!isReply && replyListOpenFor[postId] && replies.length > 0 && (
           <div className="mt-3">
-            {post.replies
+            {replies
               .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
               .map((reply) => renderPost(reply, true))}
           </div>
@@ -237,7 +253,7 @@ export default function DiscussionPage() {
         {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
       </div>
 
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[min(560px,90vw)] z-30">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[min(1024px,92vw)] z-30">
         <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-3">
           <textarea
             rows={2}

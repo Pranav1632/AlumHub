@@ -110,6 +110,36 @@ export default function PublicProfileVisitPage() {
     }
   };
 
+  const cancelOutgoing = async () => {
+    if (!chatRequestId) return;
+    try {
+      setRequestLoading(true);
+      setBanner("");
+      await api.post(`/chat/request/${chatRequestId}/cancel`);
+      setBanner("Chat request cancelled.");
+      await loadChatRequestStatus();
+    } catch (err) {
+      setBanner(getErrorMessage(err, "Failed to cancel request"));
+    } finally {
+      setRequestLoading(false);
+    }
+  };
+
+  const removeRequestRecord = async () => {
+    if (!chatRequestId) return;
+    try {
+      setRequestLoading(true);
+      setBanner("");
+      await api.delete(`/chat/request/${chatRequestId}`);
+      setBanner("Request removed.");
+      await loadChatRequestStatus();
+    } catch (err) {
+      setBanner(getErrorMessage(err, "Failed to remove request"));
+    } finally {
+      setRequestLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 py-6 px-4">
       <div className="max-w-5xl mx-auto">
@@ -139,7 +169,7 @@ export default function PublicProfileVisitPage() {
               <p className="text-xs text-slate-500 text-center mt-1">{payload.user.prn || payload.user.email}</p>
 
               <div className="mt-4 space-y-2">
-                {canRequestChat && chatRequestStatus === "none" && (
+                {canRequestChat && ["none", "rejected", "cancelled"].includes(chatRequestStatus) && (
                   <button
                     onClick={sendChatRequest}
                     disabled={requestLoading}
@@ -149,9 +179,18 @@ export default function PublicProfileVisitPage() {
                   </button>
                 )}
                 {canRequestChat && chatRequestStatus === "pending_outgoing" && (
-                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-                    Request pending. Wait for acceptance.
-                  </p>
+                  <div className="space-y-2">
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                      Request pending. Wait for acceptance.
+                    </p>
+                    <button
+                      onClick={cancelOutgoing}
+                      disabled={requestLoading}
+                      className="w-full text-xs px-2 py-2 rounded border border-amber-300 text-amber-700"
+                    >
+                      Cancel Request
+                    </button>
+                  </div>
                 )}
                 {canRequestChat && chatRequestStatus === "pending_incoming" && (
                   <div className="space-y-2">
@@ -180,6 +219,15 @@ export default function PublicProfileVisitPage() {
                     className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm"
                   >
                     <FiMessageSquare size={14} /> Open Chat
+                  </button>
+                )}
+                {canRequestChat && ["rejected", "cancelled"].includes(chatRequestStatus) && (
+                  <button
+                    onClick={removeRequestRecord}
+                    disabled={requestLoading}
+                    className="w-full text-xs px-2 py-2 rounded border border-slate-300 text-slate-700"
+                  >
+                    Remove Old Request
                   </button>
                 )}
                 {banner && (

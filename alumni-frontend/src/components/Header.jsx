@@ -14,6 +14,8 @@ const dashboardPath = (role) => {
 
 const navBase =
   "inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors duration-150";
+const mobileNavBase =
+  "shrink-0 inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border transition-colors duration-150";
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -22,6 +24,12 @@ export default function Header() {
   const navStyle = ({ isActive }) =>
     `${navBase} ${
       isActive ? "bg-blue-600 text-white" : "text-slate-700 hover:bg-slate-100"
+    }`;
+  const mobileNavStyle = ({ isActive }) =>
+    `${mobileNavBase} ${
+      isActive
+        ? "bg-blue-600 text-white border-blue-600"
+        : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
     }`;
 
   const onLogout = () => {
@@ -114,6 +122,38 @@ export default function Header() {
           )}
         </div>
       </div>
+
+      {user && (
+        <div className="lg:hidden border-t border-slate-200 bg-white">
+          <div className="px-3 py-2 overflow-x-auto">
+            <nav className="flex items-center gap-2 w-max min-w-full">
+              <NavLink to={dashboardPath(user.role)} className={mobileNavStyle}>
+                <FiHome size={13} /> Dashboard
+              </NavLink>
+              <NavLink to="/discussion" className={mobileNavStyle}>
+                <FiMessageSquare size={13} /> Discussion
+              </NavLink>
+              <NavLink to="/chat" className={mobileNavStyle}>
+                <FiMessageSquare size={13} /> Chat
+              </NavLink>
+              <NavLink to="/events" className={mobileNavStyle}>
+                <FiCalendar size={13} /> Events
+              </NavLink>
+              <NavLink to="/profile" className={mobileNavStyle}>
+                <FiUser size={13} /> Profile
+              </NavLink>
+              <NavLink to="/feedback" className={mobileNavStyle}>
+                <FiMessageSquare size={13} /> Feedback
+              </NavLink>
+              {(user.role === "student" || user.role === "admin") && (
+                <NavLink to="/alumni-directory" className={mobileNavStyle}>
+                  <FiUsers size={13} /> Alumni
+                </NavLink>
+              )}
+            </nav>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
