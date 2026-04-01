@@ -6,6 +6,8 @@ const discussionSchema = new mongoose.Schema(
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     content: { type: String, required: true, trim: true },
     parentId: { type: mongoose.Schema.Types.ObjectId, ref: "Discussion", default: null },
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }

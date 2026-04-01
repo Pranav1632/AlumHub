@@ -1,4 +1,5 @@
 const Event = require("../models/Event");
+const { getCollegeAudienceIds, notifyUsers } = require("../utils/notificationService");
 
 const createEvent = async (req, res) => {
   try {
@@ -17,6 +18,22 @@ const createEvent = async (req, res) => {
     });
 
     await event.save();
+
+    const io = req.app.get("io");
+    const audience = await getCollegeAudienceIds({
+      collegeId: req.user.collegeId,
+      excludeUserId: req.user._id,
+    });
+    await notifyUsers({
+      io,
+      collegeId: req.user.collegeId,
+      userIds: audience,
+      type: "event_update",
+      title: "New Event Published",
+      message: `${title} has been added to your college calendar.`,
+      meta: { eventId: event._id, action: "created" },
+    });
+
     return res.status(201).json({ success: true, event });
   } catch (err) {
     console.error("Create event error:", err);
@@ -45,6 +62,22 @@ const updateEvent = async (req, res) => {
     );
 
     if (!event) return res.status(404).json({ success: false, msg: "Event not found" });
+
+    const io = req.app.get("io");
+    const audience = await getCollegeAudienceIds({
+      collegeId: req.user.collegeId,
+      excludeUserId: req.user._id,
+    });
+    await notifyUsers({
+      io,
+      collegeId: req.user.collegeId,
+      userIds: audience,
+      type: "event_update",
+      title: "Event Updated",
+      message: `${event.title} has been updated in your calendar.`,
+      meta: { eventId: event._id, action: "updated" },
+    });
+
     return res.json({ success: true, event });
   } catch (err) {
     console.error("Update event error:", err);
@@ -57,6 +90,22 @@ const deleteEvent = async (req, res) => {
     const event = await Event.findOneAndDelete({ _id: req.params.id, collegeId: req.user.collegeId });
 
     if (!event) return res.status(404).json({ success: false, msg: "Event not found" });
+
+    const io = req.app.get("io");
+    const audience = await getCollegeAudienceIds({
+      collegeId: req.user.collegeId,
+      excludeUserId: req.user._id,
+    });
+    await notifyUsers({
+      io,
+      collegeId: req.user.collegeId,
+      userIds: audience,
+      type: "event_update",
+      title: "Event Removed",
+      message: `${event.title} has been removed from your calendar.`,
+      meta: { eventId: event._id, action: "deleted" },
+    });
+
     return res.json({ success: true, msg: "Event deleted successfully" });
   } catch (err) {
     console.error("Delete event error:", err);

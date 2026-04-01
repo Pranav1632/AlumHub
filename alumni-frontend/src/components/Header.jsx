@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { FiCalendar, FiHome, FiLogOut, FiMessageSquare, FiUser, FiUsers } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.png";
+import NotificationBell from "./NotificationBell";
 
 const dashboardPath = (role) => {
   if (role === "student") return "/student/dashboard";
@@ -79,6 +80,7 @@ export default function Header() {
                   <FiUsers size={15} /> Alumni
                 </NavLink>
               )}
+              <NotificationBell />
               <button
                 onClick={onLogout}
                 className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg text-red-600 hover:bg-red-50"
@@ -100,12 +102,15 @@ export default function Header() {
               </NavLink>
             </>
           ) : (
-            <button
-              onClick={onLogout}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 text-sm"
-            >
-              <FiLogOut size={14} /> Logout
-            </button>
+            <>
+              <NotificationBell />
+              <button
+                onClick={onLogout}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 text-sm"
+              >
+                <FiLogOut size={14} /> Logout
+              </button>
+            </>
           )}
         </div>
       </div>

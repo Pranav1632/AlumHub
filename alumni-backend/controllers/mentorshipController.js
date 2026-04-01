@@ -1,6 +1,7 @@
 const MentorshipRequest = require("../models/MentorshipRequest");
 const User = require("../models/User");
 const sendEmail = require("../utils/sendEmail");
+const { notifyUser } = require("../utils/notificationService");
 
 const createMentorshipRequest = async (req, res) => {
   try {
@@ -68,6 +69,17 @@ const createMentorshipRequest = async (req, res) => {
       console.error("Mentorship request email warning:", emailErr.message);
     }
 
+    const io = req.app.get("io");
+    await notifyUser({
+      io,
+      collegeId: req.user.collegeId,
+      userId: alumni._id,
+      type: "mentorship_request",
+      title: "New Mentorship Request",
+      message: `You received a mentorship request from ${req.user.name}.`,
+      meta: { mentorshipRequestId: mentorshipRequest._id },
+    });
+
     return res.status(201).json({
       success: true,
       msg: "Mentorship request sent",
@@ -109,6 +121,19 @@ const acceptMentorshipRequest = async (req, res) => {
 
     await mentorshipRequest.save();
 
+    const io = req.app.get("io");
+    if (mentorshipRequest.requestedBy) {
+      await notifyUser({
+        io,
+        collegeId: req.user.collegeId,
+        userId: mentorshipRequest.requestedBy,
+        type: "mentorship_update",
+        title: "Mentorship Request Accepted",
+        message: "Your mentorship request has been accepted.",
+        meta: { mentorshipRequestId: mentorshipRequest._id, status: "accepted" },
+      });
+    }
+
     return res.json({ success: true, msg: "Mentorship request accepted", request: mentorshipRequest });
   } catch (err) {
     console.error("Mentorship accept error:", err);
@@ -140,6 +165,19 @@ const rejectMentorshipRequest = async (req, res) => {
     mentorshipRequest.rejectionReason = reason || "No reason provided";
 
     await mentorshipRequest.save();
+
+    const io = req.app.get("io");
+    if (mentorshipRequest.requestedBy) {
+      await notifyUser({
+        io,
+        collegeId: req.user.collegeId,
+        userId: mentorshipRequest.requestedBy,
+        type: "mentorship_update",
+        title: "Mentorship Request Rejected",
+        message: "Your mentorship request has been rejected.",
+        meta: { mentorshipRequestId: mentorshipRequest._id, status: "rejected" },
+      });
+    }
 
     return res.json({ success: true, msg: "Mentorship request rejected", request: mentorshipRequest });
   } catch (err) {

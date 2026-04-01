@@ -4,6 +4,7 @@ const User = require("../models/User");
 const StudentProfile = require("../models/StudentProfile");
 const ChatRequest = require("../models/ChatRequest");
 const { canMessageDirectly } = require("../utils/chatPermission");
+const { notifyUser } = require("../utils/notificationService");
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
@@ -442,10 +443,17 @@ exports.createChatRequest = async (req, res) => {
 
     const io = req.app.get("io");
     if (io) {
-      io.to(String(receiver._id)).emit("chat:request:new", {
-        request: populated,
-      });
+      io.to(String(receiver._id)).emit("chat:request:new", { request: populated });
     }
+    await notifyUser({
+      io,
+      collegeId: req.user.collegeId,
+      userId: receiver._id,
+      type: "chat_request",
+      title: "New Chat Request",
+      message: `${req.user.name} wants to message you directly.`,
+      meta: { chatRequestId: request._id, requesterId: req.user._id },
+    });
 
     return res.status(201).json({
       success: true,
@@ -557,6 +565,18 @@ exports.respondChatRequest = async (req, res) => {
         request: populated,
       });
     }
+    await notifyUser({
+      io,
+      collegeId: req.user.collegeId,
+      userId: request.requester,
+      type: "chat_request_update",
+      title: "Chat Request Update",
+      message:
+        action === "accepted"
+          ? `${req.user.name} accepted your chat request.`
+          : `${req.user.name} rejected your chat request.`,
+      meta: { chatRequestId: request._id, status: action },
+    });
 
     return res.json({
       success: true,

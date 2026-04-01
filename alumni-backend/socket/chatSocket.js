@@ -178,9 +178,16 @@ function chatSocket(io) {
           _id: receiverId,
           collegeId: socket.user.collegeId,
           blocked: false,
-        }).select("_id");
+        }).select("_id role collegeId");
 
         if (!receiver) return;
+
+        const permission = await canMessageDirectly({
+          collegeId: socket.user.collegeId,
+          senderUser: socket.user,
+          receiverUser: receiver,
+        });
+        if (!permission.allowed) return;
 
         io.to(String(receiverId)).emit("chat:typing", {
           fromUserId: userId,

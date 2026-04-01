@@ -84,6 +84,7 @@ const mentorshipRoutes = require("./routes/mentorshipRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const discussionRoutes = require("./routes/discussionRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 app.get("/", (req, res) => {
   res.send("AlumHub API is running...");
@@ -102,6 +103,7 @@ app.use("/api/mentorship", mentorshipRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/discussions", discussionRoutes);
 app.use("/api/feedback", feedbackRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
