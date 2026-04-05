@@ -1,93 +1,375 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FiCheckCircle, FiUserX } from "react-icons/fi";
+import { FiCheckCircle, FiEdit2, FiRefreshCw, FiTrash2 } from "react-icons/fi";
 import api from "../../utils/axiosInstance";
-import { useAuth } from "../../context/AuthContext";
+
+const emptyEvent = {
+  title: "",
+  description: "",
+  date: "",
+  time: "",
+  venue: "",
+  registrationLink: "",
+  status: "published",
+};
+
+const toDateInput = (value) => {
+  if (!value) return "";
+  try {
+    return new Date(value).toISOString().slice(0, 10);
+  } catch {
+    return "";
+  }
+};
 
 export default function CollegeDashboard() {
-  const { user } = useAuth();
   const [pendingUsers, setPendingUsers] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [feedback, setFeedback] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [discussions, setDiscussions] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [eventForm, setEventForm] = useState(emptyEvent);
+  const [editingEventId, setEditingEventId] = useState("");
+  const [feedbackResponse, setFeedbackResponse] = useState({});
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
 
-  const loadPending = async () => {
+  const loadAll = async () => {
     try {
-      const res = await api.get("/admin/pending");
-      setPendingUsers(res.data?.users || []);
+      setError("");
+      const [pendingRes, usersRes, feedbackRes, eventsRes, discussionsRes, analyticsRes, summaryRes] = await Promise.all([
+        api.get("/admin/pending"),
+        api.get("/admin/users"),
+        api.get("/admin/feedback"),
+        api.get("/events"),
+        api.get("/discussions"),
+        api.get("/admin/analytics"),
+        api.get("/dashboard/summary"),
+      ]);
+      setPendingUsers(pendingRes.data?.users || []);
+      setUsers(usersRes.data?.users || []);
+      setFeedback(feedbackRes.data?.items || []);
+      setEvents(eventsRes.data?.events || []);
+      setDiscussions(discussionsRes.data || []);
+      setAnalytics(analyticsRes.data?.analytics || null);
+      setSummary(summaryRes.data || null);
     } catch (err) {
-      setError(err.response?.data?.msg || "Unable to load pending users");
+      setError(err.response?.data?.msg || "Unable to load admin dashboard");
     }
   };
 
   useEffect(() => {
-    loadPending();
+    loadAll();
   }, []);
+
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter((u) => `${u.name} ${u.email} ${u.prn || ""}`.toLowerCase().includes(q));
+  }, [users, search]);
 
   const verify = async (id) => {
     try {
       await api.put(`/admin/verify/${id}`);
-      await loadPending();
+      setStatus("User verified.");
+      loadAll();
     } catch (err) {
-      setError(err.response?.data?.msg || "Verification failed");
+      setError(err.response?.data?.msg || "Verify failed");
     }
   };
 
-  const block = async (id) => {
+  const toggleAccountBlock = async (u) => {
     try {
-      await api.put(`/admin/block/${id}`);
-      await loadPending();
+      await api.put(`/admin/${u.blocked ? "unblock" : "block"}/${u._id}`);
+      setStatus(u.blocked ? "Account unblocked." : "Account blocked.");
+      loadAll();
     } catch (err) {
-      setError(err.response?.data?.msg || "Block failed");
+      setError(err.response?.data?.msg || "Account action failed");
     }
   };
 
-  const filteredPendingUsers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return pendingUsers;
-    return pendingUsers.filter((u) => {
-      const name = u.name?.toLowerCase() || "";
-      const email = u.email?.toLowerCase() || "";
-      const prn = u.prn?.toLowerCase() || "";
-      const role = u.role?.toLowerCase() || "";
-      return name.includes(q) || email.includes(q) || prn.includes(q) || role.includes(q);
+  const toggleCommunityBlock = async (u) => {
+    try {
+      await api.patch(`/admin/community-access/${u._id}`, { blocked: !u.communityChatBlocked });
+      setStatus(!u.communityChatBlocked ? "Community access blocked." : "Community access restored.");
+      loadAll();
+    } catch (err) {
+      setError(err.response?.data?.msg || "Community action failed");
+    }
+  };
+
+  const toggleDirectChatBlock = async (u) => {
+    try {
+      await api.patch(`/admin/direct-chat-access/${u._id}`, { blocked: !u.directChatBlocked });
+      setStatus(!u.directChatBlocked ? "Direct chat blocked." : "Direct chat restored.");
+      loadAll();
+    } catch (err) {
+      setError(err.response?.data?.msg || "Direct chat action failed");
+    }
+  };
+
+  const removeDiscussion = async (id) => {
+    try {
+      await api.delete(`/admin/discussion/${id}`);
+      setStatus("Discussion removed.");
+      loadAll();
+    } catch (err) {
+      setError(err.response?.data?.msg || "Could not remove discussion");
+    }
+  };
+
+  const saveEvent = async () => {
+    try {
+      if (!eventForm.title || !eventForm.date) {
+        setError("Event title and date are required.");
+        return;
+      }
+      if (editingEventId) {
+        await api.put(`/events/${editingEventId}`, eventForm);
+        setStatus("Event updated.");
+      } else {
+        await api.post("/events", eventForm);
+        setStatus("Event created.");
+      }
+      setEventForm(emptyEvent);
+      setEditingEventId("");
+      loadAll();
+    } catch (err) {
+      setError(err.response?.data?.msg || "Event save failed");
+    }
+  };
+
+  const startEditEvent = (e) => {
+    setEditingEventId(e._id);
+    setEventForm({
+      title: e.title || "",
+      description: e.description || "",
+      date: toDateInput(e.date),
+      time: e.time || "",
+      venue: e.venue || "",
+      registrationLink: e.registrationLink || "",
+      status: e.status || "published",
     });
-  }, [pendingUsers, search]);
+  };
+
+  const deleteEvent = async (id) => {
+    try {
+      await api.delete(`/events/${id}`);
+      setStatus("Event deleted.");
+      loadAll();
+    } catch (err) {
+      setError(err.response?.data?.msg || "Event delete failed");
+    }
+  };
+
+  const setFeedbackStatus = async (item, nextStatus) => {
+    try {
+      await api.patch(`/admin/feedback/${item._id}/status`, {
+        status: nextStatus,
+        adminResponse: feedbackResponse[item._id] ?? item.adminResponse ?? "",
+      });
+      setStatus("Feedback status updated.");
+      loadAll();
+    } catch (err) {
+      setError(err.response?.data?.msg || "Feedback update failed");
+    }
+  };
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-2">
-      <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
-      <p className="text-slate-500 mt-1">{user?.name} | College: {user?.collegeId}</p>
+    <div className="max-w-7xl mx-auto py-6 px-2 space-y-5">
+      <section className="rounded-xl border border-[#0c2d53] bg-gradient-to-r from-[#0c2d53] to-[#1b4c80] text-white p-5">
+        <h1 className="text-3xl font-bold">Admin Secretariat Dashboard</h1>
+        <p className="text-sm text-blue-100 mt-1">Formal college control center for verification, moderation, complaints and insights.</p>
+        <button onClick={loadAll} className="mt-3 inline-flex items-center gap-2 px-3 py-2 rounded bg-white text-[#0c2d53] text-sm font-semibold">
+          <FiRefreshCw size={14} /> Refresh
+        </button>
+      </section>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-5 mt-6 shadow-sm">
-        <h2 className="font-semibold text-slate-800 mb-3">Pending Verification Requests</h2>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-md mb-3 border rounded-lg px-3 py-2 text-sm"
-          placeholder="Search pending users by name, role, PRN, email"
-        />
-        {filteredPendingUsers.length === 0 && <p className="text-slate-500">No pending users right now.</p>}
+      <section className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <Metric title="Students" value={analytics?.totalStudents || 0} />
+        <Metric title="Alumni" value={analytics?.totalAlumni || 0} />
+        <Metric title="Pending Verify" value={analytics?.pendingVerification || 0} />
+        <Metric title="Open Complaints" value={analytics?.openComplaints || 0} />
+        <Metric title="Community Posts" value={analytics?.discussionCount || 0} />
+      </section>
 
-        <ul className="space-y-3">
-          {filteredPendingUsers.map((u) => (
-            <li key={u._id} className="flex flex-col sm:flex-row sm:items-center justify-between border rounded-lg p-3 gap-3">
-              <div>
-                <p className="font-medium text-slate-900">{u.name}</p>
-                <p className="text-sm text-slate-500">{u.role} | {u.prn || u.email}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => verify(u._id)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm">
-                  <FiCheckCircle size={14} /> Verify
+      <section className="rounded-xl border bg-white p-4">
+        <h2 className="text-xl font-semibold text-[#123b63] mb-3">Pending Verification Requests</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[900px] text-sm">
+            <thead className="bg-slate-100">
+              <tr>
+                <th className="p-2 text-left">Name</th><th className="p-2 text-left">Role</th><th className="p-2 text-left">PRN</th>
+                <th className="p-2 text-left">Email/Phone</th><th className="p-2 text-left">Profile</th><th className="p-2 text-left">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendingUsers.map((u) => (
+                <tr key={u._id} className="border-t align-top">
+                  <td className="p-2 font-medium">{u.name}</td>
+                  <td className="p-2 capitalize">{u.role}</td>
+                  <td className="p-2">{u.prn || "-"}</td>
+                  <td className="p-2">{u.email}<p className="text-xs text-slate-500">{u.phone || "No phone"}</p></td>
+                  <td className="p-2">Branch: {u.profile?.branch || "-"}<p className="text-xs text-slate-500">Year: {u.profile?.yearOfStudy || "-"}</p></td>
+                  <td className="p-2">
+                    <button onClick={() => verify(u._id)} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-600 text-white text-xs">
+                      <FiCheckCircle size={12} /> Verify
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="rounded-xl border bg-white p-4">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <h2 className="text-xl font-semibold text-[#123b63]">User Governance Controls</h2>
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search users" className="border rounded px-3 py-2 text-sm w-64" />
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1050px] text-sm">
+            <thead className="bg-slate-100">
+              <tr>
+                <th className="p-2 text-left">User</th><th className="p-2 text-left">Verification</th><th className="p-2 text-left">Account</th>
+                <th className="p-2 text-left">Community</th><th className="p-2 text-left">Direct Chat</th><th className="p-2 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map((u) => (
+                <tr key={u._id} className="border-t">
+                  <td className="p-2"><p className="font-medium">{u.name}</p><p className="text-xs">{u.email} | {u.prn || "NA"}</p></td>
+                  <td className="p-2 text-xs">Email: {u.emailVerified ? "Yes" : "No"}<p>Admin: {u.verified ? "Yes" : "No"}</p></td>
+                  <td className="p-2">{u.blocked ? "Blocked" : "Active"}</td>
+                  <td className="p-2">{u.communityChatBlocked ? "Blocked" : "Allowed"}</td>
+                  <td className="p-2">{u.directChatBlocked ? "Blocked" : "Allowed"}</td>
+                  <td className="p-2">
+                    <div className="flex flex-wrap gap-1">
+                      <button onClick={() => toggleAccountBlock(u)} className="px-2 py-1 border rounded text-xs">{u.blocked ? "Unblock" : "Block"}</button>
+                      <button onClick={() => toggleCommunityBlock(u)} className="px-2 py-1 border rounded text-xs">{u.communityChatBlocked ? "Allow Community" : "Block Community"}</button>
+                      <button onClick={() => toggleDirectChatBlock(u)} className="px-2 py-1 border rounded text-xs">{u.directChatBlocked ? "Allow Chat" : "Block Chat"}</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="rounded-xl border bg-white p-4 space-y-3">
+        <h2 className="text-xl font-semibold text-[#123b63]">Calendar Event Control</h2>
+        <div className="grid md:grid-cols-3 gap-2">
+          <input value={eventForm.title} onChange={(e) => setEventForm((p) => ({ ...p, title: e.target.value }))} placeholder="Title" className="border rounded px-3 py-2 text-sm" />
+          <input type="date" value={eventForm.date} onChange={(e) => setEventForm((p) => ({ ...p, date: e.target.value }))} className="border rounded px-3 py-2 text-sm" />
+          <input value={eventForm.time} onChange={(e) => setEventForm((p) => ({ ...p, time: e.target.value }))} placeholder="Time" className="border rounded px-3 py-2 text-sm" />
+          <input value={eventForm.venue} onChange={(e) => setEventForm((p) => ({ ...p, venue: e.target.value }))} placeholder="Venue" className="border rounded px-3 py-2 text-sm" />
+          <input value={eventForm.registrationLink} onChange={(e) => setEventForm((p) => ({ ...p, registrationLink: e.target.value }))} placeholder="Registration link" className="border rounded px-3 py-2 text-sm" />
+          <select value={eventForm.status} onChange={(e) => setEventForm((p) => ({ ...p, status: e.target.value }))} className="border rounded px-3 py-2 text-sm"><option value="published">Published</option><option value="draft">Draft</option></select>
+          <textarea value={eventForm.description} onChange={(e) => setEventForm((p) => ({ ...p, description: e.target.value }))} rows={2} placeholder="Description" className="md:col-span-3 border rounded px-3 py-2 text-sm" />
+        </div>
+        <button onClick={saveEvent} className="px-4 py-2 rounded bg-[#123b63] text-white text-sm">{editingEventId ? "Update Event" : "Create Event"}</button>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[780px] text-sm">
+            <thead className="bg-slate-100"><tr><th className="p-2 text-left">Title</th><th className="p-2 text-left">Date</th><th className="p-2 text-left">Venue</th><th className="p-2 text-left">Action</th></tr></thead>
+            <tbody>
+              {events.map((e) => (
+                <tr key={e._id} className="border-t">
+                  <td className="p-2">{e.title}</td><td className="p-2">{new Date(e.date).toLocaleDateString()} {e.time ? `| ${e.time}` : ""}</td><td className="p-2">{e.venue || "-"}</td>
+                  <td className="p-2">
+                    <button onClick={() => startEditEvent(e)} className="inline-flex items-center gap-1 px-2 py-1 border rounded text-xs mr-1"><FiEdit2 size={11} /> Edit</button>
+                    <button onClick={() => deleteEvent(e._id)} className="inline-flex items-center gap-1 px-2 py-1 border border-red-300 text-red-600 rounded text-xs"><FiTrash2 size={11} /> Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="grid lg:grid-cols-2 gap-4">
+        <div className="rounded-xl border bg-white p-4">
+          <h2 className="text-lg font-semibold text-[#123b63] mb-3">Community Moderation</h2>
+          <div className="space-y-2 max-h-[420px] overflow-y-auto">
+            {discussions.map((d) => (
+              <div key={d._id} className="border rounded p-2">
+                <p className="font-medium text-sm">{d.user?.name || "User"} ({d.user?.role || "member"})</p>
+                <p className="text-sm text-slate-700 mt-1">{d.content}</p>
+                <button onClick={() => removeDiscussion(d._id)} className="mt-2 inline-flex items-center gap-1 px-2 py-1 border border-red-300 text-red-600 rounded text-xs">
+                  <FiTrash2 size={11} /> Remove
                 </button>
-                <button onClick={() => block(u._id)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-300 text-red-600 text-sm">
-                  <FiUserX size={14} /> Block
-                </button>
               </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+            ))}
+          </div>
+        </div>
 
-      {error && <p className="text-red-600 text-sm mt-3">{error}</p>}
+        <div className="rounded-xl border bg-white p-4">
+          <h2 className="text-lg font-semibold text-[#123b63] mb-3">Feedback and Complaints</h2>
+          <div className="space-y-2 max-h-[420px] overflow-y-auto">
+            {feedback.map((f) => (
+              <div key={f._id} className="border rounded p-2">
+                <p className="font-medium text-sm">{f.subject} <span className="text-xs text-slate-500">({f.category})</span></p>
+                <p className="text-xs text-slate-500">{f.userId?.name || "User"} | {f.userId?.email || "-"}</p>
+                <p className="text-sm mt-1">{f.message}</p>
+                <textarea
+                  rows={2}
+                  value={feedbackResponse[f._id] ?? f.adminResponse ?? ""}
+                  onChange={(e) => setFeedbackResponse((p) => ({ ...p, [f._id]: e.target.value }))}
+                  placeholder="Admin response"
+                  className="w-full mt-2 border rounded px-2 py-1 text-xs"
+                />
+                <div className="flex gap-1 mt-1">
+                  <button onClick={() => setFeedbackStatus(f, "in_review")} className="px-2 py-1 border rounded text-xs">In Review</button>
+                  <button onClick={() => setFeedbackStatus(f, "resolved")} className="px-2 py-1 border rounded text-xs">Resolved</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid lg:grid-cols-2 gap-4">
+        <div className="rounded-xl border bg-white p-4">
+          <h2 className="text-lg font-semibold text-[#123b63]">College Information</h2>
+          <p className="text-sm mt-2 font-medium">{summary?.collegeInfo?.name || "-"}</p>
+          <p className="text-sm text-slate-600">{summary?.collegeInfo?.location || "-"} | {summary?.collegeInfo?.accreditation || "-"}</p>
+          <p className="text-xs text-slate-500 mt-1">Focus: {Array.isArray(summary?.collegeInfo?.focusAreas) ? summary.collegeInfo.focusAreas.join(", ") : "-"}</p>
+          <div className="mt-3 space-y-2">
+            {(summary?.collegeNews || []).slice(0, 5).map((n, i) => (
+              <div key={`${n.title}-${i}`} className="border rounded p-2 text-sm">
+                <p className="font-medium">{n.title}</p>
+                <p className="text-xs text-slate-600">{n.summary}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl border bg-white p-4">
+          <h2 className="text-lg font-semibold text-[#123b63]">World Tech News</h2>
+          <div className="mt-3 space-y-2">
+            {(summary?.techNews || []).slice(0, 6).map((n, i) => (
+              <a key={`${n.title}-${i}`} href={n.url} target="_blank" rel="noreferrer" className="block border rounded p-2 hover:bg-slate-50">
+                <p className="text-sm font-medium">{n.title}</p>
+                <p className="text-xs text-slate-600">{n.source}</p>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {status && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-2">{status}</p>}
+      {error && <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-2">{error}</p>}
+    </div>
+  );
+}
+
+function Metric({ title, value }) {
+  return (
+    <div className="rounded-lg border bg-white p-3">
+      <p className="text-xs uppercase tracking-wide text-slate-500">{title}</p>
+      <p className="text-2xl font-bold text-[#123b63] mt-1">{value}</p>
     </div>
   );
 }

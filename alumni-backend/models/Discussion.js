@@ -9,6 +9,9 @@ const discussionSchema = new mongoose.Schema(
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     isDeleted: { type: Boolean, default: false },
+    deletedByAdminId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    deletedByAdminAt: { type: Date, default: null },
+    moderationReason: { type: String, default: "" },
   },
   { timestamps: true }
 );

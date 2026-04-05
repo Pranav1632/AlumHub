@@ -16,24 +16,28 @@ export default function StudentDashboard() {
   const [eventsCount, setEventsCount] = useState(0);
   const [alumniCount, setAlumniCount] = useState(0);
   const [requests, setRequests] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = async (showRefreshing = false) => {
     try {
       if (showRefreshing) setRefreshing(true);
-      const [eventsRes, alumniRes, mentorshipRes] = await Promise.all([
+      const [eventsRes, alumniRes, mentorshipRes, summaryRes] = await Promise.all([
         api.get("/events"),
         api.get("/alumni/verified"),
         api.get("/mentorship/my"),
+        api.get("/dashboard/summary"),
       ]);
 
       setEventsCount(eventsRes.data?.count || 0);
       setAlumniCount(alumniRes.data?.count || 0);
       setRequests(mentorshipRes.data?.requests || []);
+      setSummary(summaryRes.data || null);
     } catch {
       setEventsCount(0);
       setAlumniCount(0);
       setRequests([]);
+      setSummary(null);
     } finally {
       if (showRefreshing) setRefreshing(false);
     }
@@ -90,6 +94,51 @@ export default function StudentDashboard() {
           <span className="font-medium">View Events Calendar</span>
           <FiCalendar size={18} />
         </Link>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-4 mt-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <h3 className="font-semibold text-slate-800">College Information & News</h3>
+          <p className="text-sm text-slate-700 mt-2 font-medium">{summary?.collegeInfo?.name || "College Network"}</p>
+          <p className="text-xs text-slate-500">
+            {summary?.collegeInfo?.location || "-"} | {summary?.collegeInfo?.accreditation || "-"}
+          </p>
+          <p className="text-xs text-slate-500 mt-1">
+            Focus Areas: {Array.isArray(summary?.collegeInfo?.focusAreas) ? summary.collegeInfo.focusAreas.join(", ") : "-"}
+          </p>
+          <div className="space-y-2 mt-3">
+            {(summary?.collegeNews || []).slice(0, 4).map((item, idx) => (
+              <div key={`${item.title}-${idx}`} className="border rounded-lg p-2 bg-slate-50">
+                <p className="text-sm font-medium text-slate-800">{item.title}</p>
+                <p className="text-xs text-slate-600">{item.summary}</p>
+              </div>
+            ))}
+            {(summary?.collegeNews || []).length === 0 && (
+              <p className="text-sm text-slate-500">No recent college updates.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <h3 className="font-semibold text-slate-800">World Tech News</h3>
+          <div className="space-y-2 mt-3">
+            {(summary?.techNews || []).slice(0, 5).map((item, idx) => (
+              <a
+                key={`${item.title}-${idx}`}
+                href={item.url}
+                target="_blank"
+                rel="noreferrer"
+                className="block border rounded-lg p-2 hover:bg-slate-50"
+              >
+                <p className="text-sm font-medium text-slate-800">{item.title}</p>
+                <p className="text-xs text-slate-500">{item.source}</p>
+              </a>
+            ))}
+            {(summary?.techNews || []).length === 0 && (
+              <p className="text-sm text-slate-500">No tech news available right now.</p>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm mt-6">

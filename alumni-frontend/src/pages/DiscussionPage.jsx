@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BiUpvote } from "react-icons/bi";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
-import { FiMessageCircle, FiSearch, FiSend, FiUser } from "react-icons/fi";
+import { FiMessageCircle, FiMessageSquare, FiSearch, FiSend, FiUser } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import api from "../utils/axiosInstance";
 import { getErrorMessage } from "../utils/errorUtils";
@@ -126,6 +126,7 @@ export default function DiscussionPage() {
     const likedByMe = likes.some((id) => normalizeId(id) === normalizeId(meId));
     const upvotedByMe = upvotes.some((id) => normalizeId(id) === normalizeId(meId));
     const userName = post.user?.name || "User";
+    const userId = normalizeId(post.user?._id);
     const avatar = avatarFromName(userName);
 
     return (
@@ -177,6 +178,28 @@ export default function DiscussionPage() {
                   className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50"
                 >
                   <FiMessageCircle size={14} /> Reply
+                </button>
+              )}
+              {!isReply &&
+                userId &&
+                normalizeId(meId) !== userId &&
+                !(user?.role === "student" && post.user?.role === "student") && (
+                <button
+                  onClick={() =>
+                    navigate("/chat", {
+                      state: {
+                        chatTarget: {
+                          _id: userId,
+                          name: userName,
+                          email: post.user?.email,
+                          prn: post.user?.prn,
+                        },
+                      },
+                    })
+                  }
+                  className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                >
+                  <FiMessageSquare size={14} /> Private Chat
                 </button>
               )}
               {!isReply && replies.length > 0 && (

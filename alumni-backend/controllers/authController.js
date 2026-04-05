@@ -1,7 +1,17 @@
-const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const StudentProfile = require("../models/StudentProfile");
+const AlumniProfile = require("../models/AlumniProfile");
 const sampleAuthUsers = require("../data/sampleAuthUsers.json");
+const sendEmail = require("../utils/sendEmail");
+const { notifyUser } = require("../utils/notificationService");
+const { getProfileCompletion } = require("../utils/profileCompletion");
+const { createVerificationPayload, isCodeValid } = require("../utils/verificationCode");
+const { sendPhoneVerificationCode } = require("../utils/phoneVerification");
+const { EMAIL_VERIFICATION_ENABLED, PHONE_VERIFICATION_ENABLED } = require("../config/verificationFlags");
+
+const PROFILE_REMINDER_INTERVAL_MS = 48 * 60 * 60 * 1000;
 
 const normalizeRole = (role) => (role === "collegeAdmin" ? "admin" : role);
 
@@ -12,6 +22,7 @@ const parseDuplicateKeyMessage = (err) => {
   if (keys.includes("email")) return "Email already exists in this college";
   if (keys.includes("prn")) return "PRN already exists in this college";
   if (keys.includes("instituteCode")) return "Institute code already exists in this college";
+  if (keys.includes("phone")) return "Phone number already exists in this college";
   return "Duplicate value already exists";
 };
 
@@ -32,10 +43,16 @@ const authPayload = (user) => ({
   role: normalizeRole(user.role),
   name: user.name,
   email: user.email,
+  phone: user.phone || "",
   prn: user.prn,
   instituteCode: user.instituteCode,
   collegeId: user.collegeId,
   verified: user.verified,
+  emailVerified: user.emailVerified,
+  phoneVerified: user.phoneVerified,
+  blocked: user.blocked,
+  communityChatBlocked: user.communityChatBlocked,
+  directChatBlocked: user.directChatBlocked,
 });
 
 const upsertSampleUser = async ({ name, email, password, role, collegeId, prn, instituteCode }) => {
@@ -68,6 +85,8 @@ const upsertSampleUser = async ({ name, email, password, role, collegeId, prn, i
       prn: normalizedPrn,
       instituteCode: normalizedInstituteCode,
       verified: true,
+      emailVerified: true,
+      phoneVerified: true,
       blocked: false,
     });
   } else {
@@ -79,6 +98,8 @@ const upsertSampleUser = async ({ name, email, password, role, collegeId, prn, i
     user.prn = normalizedPrn;
     user.instituteCode = normalizedInstituteCode;
     user.verified = true;
+    user.emailVerified = true;
+    user.phoneVerified = true;
     user.blocked = false;
     await user.save();
   }
@@ -102,6 +123,105 @@ const trySampleAdminLogin = async ({ email, collegeId, password }) => {
   return upsertSampleUser({ ...sampleAdmin, role: "admin" });
 };
 
+const buildProfileFromSignup = ({ role, collegeId, userId, phone, body }) => {
+  const shared = {
+    user: userId,
+    collegeId,
+    phone: phone || "",
+    branch: String(body?.branch || "").trim(),
+    graduationYear: String(body?.graduationYear || "").trim(),
+    profileImage: String(body?.profileImage || "").trim(),
+    bio: String(body?.bio || "").trim(),
+    headline: String(body?.headline || "").trim(),
+    location: String(body?.location || "").trim(),
+    skills: Array.isArray(body?.skills) ? body.skills : [],
+    interests: Array.isArray(body?.interests) ? body.interests : [],
+    linkedIn: String(body?.linkedIn || "").trim(),
+    github: String(body?.github || "").trim(),
+    portfolio: String(body?.portfolio || "").trim(),
+    resumeLink: String(body?.resumeLink || "").trim(),
+  };
+
+  if (role === "student") {
+    return {
+      ...shared,
+      yearOfStudy: String(body?.yearOfStudy || "").trim(),
+      interests: Array.isArray(body?.interests) ? body.interests : [],
+    };
+  }
+
+  return {
+    ...shared,
+    currentCompany: String(body?.currentCompany || "").trim(),
+    jobTitle: String(body?.jobTitle || "").trim(),
+    achievements: Array.isArray(body?.achievements) ? body.achievements : [],
+  };
+};
+
+const sendSignupVerificationEmails = async ({ user, emailCode }) => {
+  if (!EMAIL_VERIFICATION_ENABLED || !emailCode) return;
+
+  const subject = "AlumHub Email Verification Code";
+  const text = `Hello ${user.name}, your AlumHub email verification code is ${emailCode}. It will expire in 10 minutes.`;
+
+  await sendEmail({
+    to: user.email,
+    subject,
+    text,
+    html: `<p>Hello ${user.name},</p><p>Your AlumHub email verification code is <b>${emailCode}</b>.</p><p>This code expires in 10 minutes.</p>`,
+  });
+};
+
+const sendProfileCompletionReminderIfNeeded = async ({ req, user }) => {
+  if (!["student", "alumni"].includes(user.role)) return;
+
+  const Model = user.role === "student" ? StudentProfile : AlumniProfile;
+  const profile = await Model.findOne({
+    user: user._id,
+    collegeId: user.collegeId,
+  }).lean();
+
+  const completion = getProfileCompletion({ user, profile });
+  if (completion.isComplete) return;
+
+  const now = Date.now();
+  const lastReminderAt = user.lastProfileReminderSentAt ? new Date(user.lastProfileReminderSentAt).getTime() : 0;
+
+  if (lastReminderAt && now - lastReminderAt < PROFILE_REMINDER_INTERVAL_MS) {
+    return;
+  }
+
+  const io = req.app.get("io");
+  const missingFieldsText = completion.missingFields.slice(0, 5).join(", ");
+
+  await notifyUser({
+    io,
+    collegeId: user.collegeId,
+    userId: user._id,
+    type: "profile_reminder",
+    title: "Complete Your Profile",
+    message: `Please complete your profile. Missing: ${missingFieldsText}`,
+    meta: {
+      completionPercent: completion.completionPercent,
+      missingFields: completion.missingFields,
+    },
+  });
+
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "AlumHub Profile Completion Reminder",
+      text: `Hello ${user.name}, please complete your profile. Missing fields: ${completion.missingFields.join(", ")}.`,
+      html: `<p>Hello ${user.name},</p><p>Please complete your profile to get better visibility and opportunities.</p><p>Missing fields: <b>${completion.missingFields.join(", ")}</b></p>`,
+    });
+  } catch (emailError) {
+    console.error("Profile reminder email warning:", emailError.message);
+  }
+
+  user.lastProfileReminderSentAt = new Date();
+  await user.save();
+};
+
 exports.signup = async (req, res) => {
   try {
     const {
@@ -112,10 +232,13 @@ exports.signup = async (req, res) => {
       role,
       prn,
       collegeId,
+      phone,
     } = req.body;
 
-    if (!name || !email || !password || !role || !collegeId) {
-      return res.status(400).json({ msg: "Name, email, password, role and collegeId are required" });
+    if (!name || !email || !password || !role || !collegeId || !phone) {
+      return res.status(400).json({
+        msg: "Name, email, phone, password, role and collegeId are required",
+      });
     }
 
     if (confirmPassword && password !== confirmPassword) {
@@ -130,10 +253,7 @@ exports.signup = async (req, res) => {
       });
     }
 
-    if (![
-      "student",
-      "alumni",
-    ].includes(normalizedRole)) {
+    if (!["student", "alumni"].includes(normalizedRole)) {
       return res.status(400).json({ msg: "Invalid role for signup" });
     }
 
@@ -141,52 +261,204 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ msg: "PRN is required for student/alumni" });
     }
 
+    const normalizedCollegeId = String(collegeId).trim();
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedPrn = String(prn).trim().toUpperCase();
+    const normalizedPhone = String(phone).trim();
+
     const existingEmail = await User.findOne({
-      collegeId: collegeId.trim(),
-      email: email.trim().toLowerCase(),
+      collegeId: normalizedCollegeId,
+      email: normalizedEmail,
     });
-    if (existingEmail) {
-      return res.status(400).json({ msg: "Email already exists in this college" });
-    }
+    if (existingEmail) return res.status(409).json({ msg: "Email already exists in this college" });
 
     const existingPrn = await User.findOne({
-      collegeId: collegeId.trim(),
-      prn: prn.trim().toUpperCase(),
+      collegeId: normalizedCollegeId,
+      prn: normalizedPrn,
     });
-    if (existingPrn) {
-      return res.status(400).json({ msg: "PRN already exists in this college" });
-    }
+    if (existingPrn) return res.status(409).json({ msg: "PRN already exists in this college" });
+
+    const existingPhone = await User.findOne({
+      collegeId: normalizedCollegeId,
+      phone: normalizedPhone,
+    });
+    if (existingPhone) return res.status(409).json({ msg: "Phone number already exists in this college" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const emailVerification = EMAIL_VERIFICATION_ENABLED
+      ? createVerificationPayload({ digits: 6, ttlMinutes: 10 })
+      : null;
+
+    const phoneVerification = PHONE_VERIFICATION_ENABLED
+      ? createVerificationPayload({ digits: 6, ttlMinutes: 10 })
+      : null;
+
     const user = await User.create({
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
+      name: String(name).trim(),
+      email: normalizedEmail,
+      phone: normalizedPhone,
       password: hashedPassword,
       role: normalizedRole,
-      prn: prn.trim().toUpperCase(),
-      collegeId: collegeId.trim(),
+      prn: normalizedPrn,
+      collegeId: normalizedCollegeId,
       verified: false,
+      emailVerified: !EMAIL_VERIFICATION_ENABLED,
+      phoneVerified: !PHONE_VERIFICATION_ENABLED,
+      emailVerificationCodeHash: emailVerification?.codeHash || null,
+      emailVerificationExpires: emailVerification?.expiresAt || null,
+      phoneVerificationCodeHash: phoneVerification?.codeHash || null,
+      phoneVerificationExpires: phoneVerification?.expiresAt || null,
     });
 
+    const signupProfileData = buildProfileFromSignup({
+      role: normalizedRole,
+      collegeId: normalizedCollegeId,
+      userId: user._id,
+      phone: normalizedPhone,
+      body: req.body,
+    });
+
+    if (normalizedRole === "student") {
+      await StudentProfile.findOneAndUpdate(
+        { user: user._id, collegeId: normalizedCollegeId },
+        { $set: signupProfileData },
+        { upsert: true, new: true }
+      );
+    } else {
+      await AlumniProfile.findOneAndUpdate(
+        { user: user._id, collegeId: normalizedCollegeId },
+        { $set: signupProfileData },
+        { upsert: true, new: true }
+      );
+    }
+
+    let emailDispatchWarning = "";
+
+    try {
+      await sendSignupVerificationEmails({
+        user,
+        emailCode: emailVerification?.code,
+      });
+    } catch (mailErr) {
+      console.error("Signup verification email error:", mailErr.message);
+      emailDispatchWarning = " Email verification mail could not be sent right now. Please use resend code.";
+    }
+
+    if (PHONE_VERIFICATION_ENABLED && phoneVerification?.code) {
+      await sendPhoneVerificationCode({
+        phone: normalizedPhone,
+        code: phoneVerification.code,
+      });
+    }
+
     return res.status(201).json({
-      msg: "Signup successful. Wait for admin verification before login.",
+      msg: `Signup successful. Verify your email and wait for admin verification before login.${emailDispatchWarning}`,
       user: {
         id: user._id,
         name: user.name,
         role: normalizeRole(user.role),
         email: user.email,
+        phone: user.phone,
         prn: user.prn,
         collegeId: user.collegeId,
         verified: user.verified,
+        emailVerified: user.emailVerified,
+        phoneVerified: user.phoneVerified,
       },
     });
   } catch (err) {
     console.error("Signup error:", err);
     const duplicateMsg = parseDuplicateKeyMessage(err);
-    if (duplicateMsg) {
-      return res.status(409).json({ msg: duplicateMsg });
+    if (duplicateMsg) return res.status(409).json({ msg: duplicateMsg });
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+};
+
+exports.verifyEmailCode = async (req, res) => {
+  try {
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const collegeId = String(req.body?.collegeId || "").trim();
+    const code = String(req.body?.code || "").trim();
+
+    if (!email || !collegeId || !code) {
+      return res.status(400).json({ msg: "Email, collegeId and code are required" });
     }
+
+    const user = await User.findOne({
+      email,
+      collegeId,
+      role: { $in: ["student", "alumni"] },
+    });
+
+    if (!user) return res.status(404).json({ msg: "Account not found" });
+
+    if (user.emailVerified) {
+      return res.json({ success: true, msg: "Email already verified" });
+    }
+
+    const valid = isCodeValid({
+      providedCode: code,
+      storedHash: user.emailVerificationCodeHash,
+      expiresAt: user.emailVerificationExpires,
+    });
+
+    if (!valid) {
+      return res.status(400).json({ msg: "Invalid or expired verification code" });
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationCodeHash = null;
+    user.emailVerificationExpires = null;
+    await user.save();
+
+    return res.json({
+      success: true,
+      msg: "Email verified successfully. Wait for admin approval to login.",
+    });
+  } catch (err) {
+    console.error("Email verification error:", err);
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+};
+
+exports.resendEmailCode = async (req, res) => {
+  try {
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const collegeId = String(req.body?.collegeId || "").trim();
+
+    if (!email || !collegeId) {
+      return res.status(400).json({ msg: "Email and collegeId are required" });
+    }
+
+    const user = await User.findOne({
+      email,
+      collegeId,
+      role: { $in: ["student", "alumni"] },
+    });
+
+    if (!user) return res.status(404).json({ msg: "Account not found" });
+
+    if (user.emailVerified) {
+      return res.status(400).json({ msg: "Email is already verified" });
+    }
+
+    const nextCode = createVerificationPayload({ digits: 6, ttlMinutes: 10 });
+    user.emailVerificationCodeHash = nextCode.codeHash;
+    user.emailVerificationExpires = nextCode.expiresAt;
+    await user.save();
+
+    await sendSignupVerificationEmails({
+      user,
+      emailCode: nextCode.code,
+    });
+
+    return res.json({
+      success: true,
+      msg: "Verification code sent to your email",
+    });
+  } catch (err) {
+    console.error("Resend email code error:", err);
     return res.status(500).json({ msg: "Server error", error: err.message });
   }
 };
@@ -251,12 +523,24 @@ exports.login = async (req, res) => {
       return res.status(403).json({ msg: "Wrong portal for this account" });
     }
 
+    if (normalizedRole !== "admin" && EMAIL_VERIFICATION_ENABLED && !user.emailVerified) {
+      return res.status(403).json({ msg: "Please verify your email before login" });
+    }
+
+    if (normalizedRole !== "admin" && PHONE_VERIFICATION_ENABLED && !user.phoneVerified) {
+      return res.status(403).json({ msg: "Please verify your phone before login" });
+    }
+
     if (normalizedRole !== "admin" && !user.verified) {
       return res.status(403).json({ msg: "Account not verified yet by college admin" });
     }
 
     user.lastLoginAt = new Date();
     await user.save();
+
+    if (normalizedRole === "student" || normalizedRole === "alumni") {
+      await sendProfileCompletionReminderIfNeeded({ req, user });
+    }
 
     return res.json(authPayload(user));
   } catch (err) {
@@ -290,10 +574,15 @@ exports.getAuthMe = async (req, res) => {
       role: normalizeRole(req.user.role),
       name: req.user.name,
       email: req.user.email,
+      phone: req.user.phone || "",
       prn: req.user.prn,
       collegeId: req.user.collegeId,
       verified: req.user.verified,
+      emailVerified: req.user.emailVerified,
+      phoneVerified: req.user.phoneVerified,
       blocked: req.user.blocked,
+      communityChatBlocked: req.user.communityChatBlocked,
+      directChatBlocked: req.user.directChatBlocked,
     },
   });
 };

@@ -85,6 +85,7 @@ const chatRoutes = require("./routes/chatRoutes");
 const discussionRoutes = require("./routes/discussionRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 app.get("/", (req, res) => {
   res.send("AlumHub API is running...");
@@ -104,6 +105,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/discussions", discussionRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -133,7 +135,9 @@ const ensureUserIndexes = async () => {
 
 const startServer = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000,
+    });
     console.log("MongoDB connected");
     await ensureUserIndexes();
 
@@ -143,6 +147,13 @@ const startServer = async () => {
     });
   } catch (error) {
     console.error("Failed to start server:", error);
+    if (String(error?.message || "").includes("ECONNREFUSED")) {
+      console.error("MongoDB connection was refused.");
+      console.error("Fix steps:");
+      console.error("1) Ensure MongoDB service is running on your machine.");
+      console.error("2) Verify MONGO_URI inside alumni-backend/.env");
+      console.error("3) For local setup, use mongodb://127.0.0.1:27017/alumniDB");
+    }
     process.exit(1);
   }
 };

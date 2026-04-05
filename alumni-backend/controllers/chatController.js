@@ -68,8 +68,20 @@ const emitReadReceipt = (io, targetUserId, readerId) => {
   });
 };
 
+const isAdminRole = (role) => ["admin", "collegeAdmin", "superAdmin"].includes(role);
+
+const ensureDirectChatAccess = (req, res) => {
+  if (!isAdminRole(req.user.role) && req.user.directChatBlocked) {
+    res.status(403).json({ message: "Your direct chat access is blocked by admin" });
+    return false;
+  }
+  return true;
+};
+
 exports.sendMessage = async (req, res) => {
   try {
+    if (!ensureDirectChatAccess(req, res)) return;
+
     const { receiverId, text, clientId } = req.body || {};
     const cleanText = sanitizeText(text);
 
@@ -367,6 +379,8 @@ exports.getChatContacts = async (req, res) => {
 
 exports.createChatRequest = async (req, res) => {
   try {
+    if (!ensureDirectChatAccess(req, res)) return;
+
     if (req.user.role !== "student") {
       return res.status(403).json({ message: "Only students can send chat requests" });
     }
@@ -388,10 +402,14 @@ exports.createChatRequest = async (req, res) => {
       role: "student",
       verified: true,
       blocked: false,
-    }).select("_id name email prn role");
+    }).select("_id name email prn role directChatBlocked");
 
     if (!receiver) {
       return res.status(404).json({ message: "Student not found in your college" });
+    }
+
+    if (receiver.directChatBlocked) {
+      return res.status(403).json({ message: "This student is not available for direct chat" });
     }
 
     const accepted = await ChatRequest.findOne({
@@ -522,6 +540,8 @@ exports.listMyChatRequests = async (req, res) => {
 
 exports.respondChatRequest = async (req, res) => {
   try {
+    if (!ensureDirectChatAccess(req, res)) return;
+
     if (req.user.role !== "student") {
       return res.status(403).json({ message: "Only students can respond to chat requests" });
     }
@@ -591,6 +611,8 @@ exports.respondChatRequest = async (req, res) => {
 
 exports.cancelChatRequest = async (req, res) => {
   try {
+    if (!ensureDirectChatAccess(req, res)) return;
+
     if (req.user.role !== "student") {
       return res.status(403).json({ message: "Only students can cancel chat requests" });
     }

@@ -16,8 +16,11 @@ const alumniProfileSchema = new mongoose.Schema(
     portfolio: String,
     profileImage: String,
     bio: String,
+    headline: String,
     skills: [String],
+    interests: [String],
     achievements: [String],
+    resumeLink: String,
     willingToMentor: { type: Boolean, default: false },
   },
   { timestamps: true }

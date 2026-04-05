@@ -103,6 +103,9 @@ export default function Login() {
             <FiKey size={22} /> AlumHub Login
           </h1>
           <p className="text-sm text-slate-500 mb-6">Use portal-wise credentials. Admin login works from sample JSON credentials.</p>
+          <p className="text-xs text-slate-500 -mt-4 mb-5">
+            Student/alumni accounts must complete email verification and admin approval before login.
+          </p>
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

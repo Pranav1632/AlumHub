@@ -169,6 +169,26 @@ export default function PublicProfileVisitPage() {
               <p className="text-xs text-slate-500 text-center mt-1">{payload.user.prn || payload.user.email}</p>
 
               <div className="mt-4 space-y-2">
+                {!isSelf && !canRequestChat && (
+                  <button
+                    onClick={() =>
+                      navigate("/chat", {
+                        state: {
+                          chatTarget: {
+                            _id: payload.user?._id,
+                            name: payload.user?.name,
+                            email: payload.user?.email,
+                            prn: payload.user?.prn,
+                          },
+                        },
+                      })
+                    }
+                    className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm"
+                  >
+                    <FiMessageSquare size={14} /> Private Chat
+                  </button>
+                )}
+
                 {canRequestChat && ["none", "rejected", "cancelled"].includes(chatRequestStatus) && (
                   <button
                     onClick={sendChatRequest}

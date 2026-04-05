@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import {
   FiArrowLeft,
@@ -49,6 +49,7 @@ const statusLabel = (status) => {
 export default function ChatPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const meId = user?.id || user?._id;
   const isStudent = user?.role === "student";
 
@@ -408,6 +409,13 @@ export default function ChatPage() {
     fetchContacts();
     fetchRequests();
   }, [fetchContacts, fetchRequests]);
+
+  useEffect(() => {
+    const target = location.state?.chatTarget;
+    if (target?._id) {
+      addOrActivateContact(target);
+    }
+  }, [addOrActivateContact, location.state]);
 
   useEffect(() => {
     if (!isStudent) return undefined;

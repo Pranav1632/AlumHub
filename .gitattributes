@@ -1,0 +1,21 @@
+# Auto normalize line endings for all text files
+* text=auto
+
+# JavaScript files
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+
+# Markdown
+*.md text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+
+# Binary files
+*.wt binary
+*.bson binary
+*.exe binary
+*.png binary
+*.jpg binary
+*.gif binary

@@ -1,19 +1,19 @@
 import React, { useState } from "react";
 import api from "../utils/axiosInstance";
-import { useAuth } from "../context/AuthContext";
+import { getErrorMessage } from "../utils/errorUtils";
 
 export default function Feedback() {
-  const { user } = useAuth();
   const [formData, setFormData] = useState({
+    category: "feedback",
     subject: "",
     message: "",
   });
-
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
@@ -21,73 +21,92 @@ export default function Feedback() {
     setSuccess("");
     setError("");
 
-    if (!formData.subject || !formData.message) {
-      setError("Please fill in all fields.");
+    if (!formData.subject.trim() || !formData.message.trim()) {
+      setError("Please fill subject and message.");
       return;
     }
 
     try {
+      setSubmitting(true);
       await api.post("/feedback", {
-        userId: user?.id || null,
-        ...formData,
+        category: formData.category,
+        subject: formData.subject.trim(),
+        message: formData.message.trim(),
       });
-
-      setSuccess("Thank you! Your feedback has been submitted.");
-      setFormData({ subject: "", message: "" });
+      setSuccess("Your message has been submitted to admin.");
+      setFormData({
+        category: "feedback",
+        subject: "",
+        message: "",
+      });
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to submit feedback.");
+      setError(getErrorMessage(err, "Failed to submit feedback"));
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center bg-gradient-to-br from-blue-100 via-purple-100 to-pink-200 px-4 py-10 overflow-hidden">
-      <div className="absolute top-10 left-10 w-32 h-32 bg-blue-400 rounded-full opacity-30 animate-pulse"></div>
-      <div className="absolute bottom-20 right-10 w-40 h-40 bg-purple-500 rounded-full opacity-30 animate-bounce"></div>
+    <div className="min-h-screen bg-slate-100 py-8 px-4">
+      <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+        <h1 className="text-2xl font-bold text-slate-900">Feedback and Complaint Form</h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Submit feedback, complaints, suggestions, or bug reports directly to the admin office.
+        </p>
 
-      <div className="bg-white/70 backdrop-blur-lg shadow-2xl rounded-2xl p-10 w-full max-w-lg z-10 animate-fade-in">
-        <h2 className="text-3xl font-bold text-blue-800 mb-6 text-center">Submit Your Feedback</h2>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="mt-5 space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2"
+            >
+              <option value="feedback">Feedback</option>
+              <option value="complaint">Complaint</option>
+              <option value="suggestion">Suggestion</option>
+              <option value="bug_report">Bug Report</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Subject</label>
             <input
               type="text"
               name="subject"
               value={formData.subject}
               onChange={handleChange}
-              placeholder="Enter feedback subject"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2"
+              placeholder="Write a short subject"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Message</label>
             <textarea
               name="message"
               value={formData.message}
               onChange={handleChange}
-              placeholder="Write your feedback here..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-32"
+              rows={6}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 resize-none"
+              placeholder="Describe your feedback/complaint with full details"
               required
-            ></textarea>
+            />
           </div>
 
           <button
             type="submit"
-            className="w-full py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:opacity-90 transition duration-200"
+            disabled={submitting}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold disabled:bg-blue-300"
           >
-            Submit Feedback
+            {submitting ? "Submitting..." : "Submit To Admin"}
           </button>
-
-          {success && (
-            <p className="mt-4 text-green-700 border border-green-300 bg-green-50 p-3 rounded text-sm">{success}</p>
-          )}
-
-          {error && (
-            <p className="mt-4 text-red-700 border border-red-300 bg-red-50 p-3 rounded text-sm">{error}</p>
-          )}
         </form>
+
+        {success && <p className="mt-3 text-sm text-emerald-700">{success}</p>}
+        {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
       </div>
     </div>
   );

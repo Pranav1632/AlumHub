@@ -69,10 +69,7 @@ export default function Header() {
                 <FiHome size={15} /> Dashboard
               </NavLink>
               <NavLink to="/discussion" className={navStyle}>
-                <FiMessageSquare size={15} /> Discussion
-              </NavLink>
-              <NavLink to="/chat" className={navStyle}>
-                <FiMessageSquare size={15} /> Chat
+                <FiUsers size={15} /> Community
               </NavLink>
               <NavLink to="/events" className={navStyle}>
                 <FiCalendar size={15} /> Events
@@ -131,10 +128,7 @@ export default function Header() {
                 <FiHome size={13} /> Dashboard
               </NavLink>
               <NavLink to="/discussion" className={mobileNavStyle}>
-                <FiMessageSquare size={13} /> Discussion
-              </NavLink>
-              <NavLink to="/chat" className={mobileNavStyle}>
-                <FiMessageSquare size={13} /> Chat
+                <FiUsers size={13} /> Community
               </NavLink>
               <NavLink to="/events" className={mobileNavStyle}>
                 <FiCalendar size={13} /> Events

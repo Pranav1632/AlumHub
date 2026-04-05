@@ -14,6 +14,8 @@ const notificationSchema = new mongoose.Schema(
         "event_update",
         "discussion_reply",
         "discussion_reaction",
+        "profile_reminder",
+        "admin_action",
         "general",
       ],
       default: "general",
@@ -30,4 +32,3 @@ const notificationSchema = new mongoose.Schema(
 notificationSchema.index({ collegeId: 1, user: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Notification", notificationSchema);
-

@@ -6,6 +6,7 @@ const { canMessageDirectly } = require("../utils/chatPermission");
 
 const MAX_MESSAGE_LENGTH = 2000;
 const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
+const isAdminRole = (role) => ["admin", "collegeAdmin", "superAdmin"].includes(role);
 
 const activeConnections = new Map();
 
@@ -36,7 +37,7 @@ function chatSocket(io) {
       if (!token) return next(new Error("Unauthorized"));
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.id).select("_id collegeId blocked role name");
+      const user = await User.findById(decoded.id).select("_id collegeId blocked role name directChatBlocked");
       if (!user || user.blocked) return next(new Error("Unauthorized"));
 
       socket.user = user;
@@ -103,6 +104,11 @@ function chatSocket(io) {
 
     socket.on("chat:send", async (payload = {}, ack) => {
       try {
+        if (!isAdminRole(socket.user.role) && socket.user.directChatBlocked) {
+          if (ack) ack({ ok: false, message: "Your direct chat access is blocked by admin" });
+          return;
+        }
+
         const { receiverId, text, clientId } = payload;
         const cleanText = typeof text === "string" ? text.trim() : "";
 
@@ -171,6 +177,8 @@ function chatSocket(io) {
 
     socket.on("chat:typing", async (payload = {}) => {
       try {
+        if (!isAdminRole(socket.user.role) && socket.user.directChatBlocked) return;
+
         const { receiverId, isTyping = false } = payload;
         if (!receiverId || !isValidObjectId(receiverId)) return;
 

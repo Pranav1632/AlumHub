@@ -6,6 +6,10 @@ const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
 exports.createDiscussion = async (req, res) => {
   try {
+    if (req.user.role !== "admin" && req.user.communityChatBlocked) {
+      return res.status(403).json({ message: "Your community discussion access is blocked by admin" });
+    }
+
     const content = String(req.body?.content || "").trim();
     const parentId = req.body?.parentId || null;
 
@@ -89,6 +93,10 @@ exports.getMyDiscussions = async (req, res) => {
 
 const toggleReaction = async (req, res, field, label) => {
   try {
+    if (req.user.role !== "admin" && req.user.communityChatBlocked) {
+      return res.status(403).json({ message: "Your community discussion access is blocked by admin" });
+    }
+
     const post = await Discussion.findOne({
       _id: req.params.id,
       collegeId: req.user.collegeId,
@@ -138,4 +146,3 @@ const toggleReaction = async (req, res, field, label) => {
 
 exports.toggleLike = async (req, res) => toggleReaction(req, res, "likes", "Like");
 exports.toggleUpvote = async (req, res) => toggleReaction(req, res, "upvotes", "Upvote");
-

@@ -11,6 +11,15 @@ const canMessageDirectly = async ({ collegeId, senderUser, receiverUser }) => {
 
   const senderRole = senderUser.role;
   const receiverRole = receiverUser.role;
+  const isSenderAdmin = senderRole === "admin" || senderRole === "collegeAdmin" || senderRole === "superAdmin";
+
+  if (!isSenderAdmin && senderUser.directChatBlocked) {
+    return { allowed: false, reason: "Your direct chat access is blocked by admin" };
+  }
+
+  if (!isSenderAdmin && receiverUser.directChatBlocked) {
+    return { allowed: false, reason: "This user cannot be contacted via direct chat right now" };
+  }
 
   if (senderRole === "student" && receiverRole === "student") {
     const accepted = await ChatRequest.findOne({
@@ -36,4 +45,3 @@ const canMessageDirectly = async ({ collegeId, senderUser, receiverUser }) => {
 module.exports = {
   canMessageDirectly,
 };
-

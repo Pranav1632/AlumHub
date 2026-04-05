@@ -26,10 +26,13 @@ exports.getMe = async (req, res) => {
 exports.updateMe = async (req, res) => {
   try {
     const userId = req.user.id;
+    const nextName = String(req.body?.name || "").trim();
+    const nextEmail = String(req.body?.email || "").trim().toLowerCase();
+    const nextPhone = String(req.body?.phone || "").trim();
 
     const updatedUser = await User.findOneAndUpdate(
       { _id: userId, collegeId: req.user.collegeId },
-      { name: req.body.name, email: req.body.email },
+      { name: nextName, email: nextEmail, phone: nextPhone || req.user.phone || "" },
       { new: true }
     ).select("-password");
 

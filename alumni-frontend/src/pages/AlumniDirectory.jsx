@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FiSend } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import api from "../utils/axiosInstance";
 
 export default function AlumniDirectory() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [alumni, setAlumni] = useState([]);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
@@ -124,6 +126,23 @@ export default function AlumniDirectory() {
             <p><span className="font-medium">PRN:</span> {selected.prn || "-"}</p>
             <p><span className="font-medium">Email:</span> {selected.email}</p>
             <p><span className="font-medium">Role:</span> {selected.role}</p>
+            <button
+              onClick={() =>
+                navigate("/chat", {
+                  state: {
+                    chatTarget: {
+                      _id: selected._id,
+                      name: selected.name,
+                      email: selected.email,
+                      prn: selected.prn,
+                    },
+                  },
+                })
+              }
+              className="w-full mt-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded border border-emerald-300 text-emerald-700 text-sm hover:bg-emerald-50"
+            >
+              Private Chat
+            </button>
           </div>
         )}
 

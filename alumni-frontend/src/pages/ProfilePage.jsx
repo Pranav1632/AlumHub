@@ -45,7 +45,7 @@ export default function ProfilePage() {
         setForm({
           name: user.name || "",
           email: user.email || "",
-          phone: profile.phone || "",
+          phone: profile.phone || user.phone || "",
           branch: profile.branch || "",
           yearOfStudy: profile.yearOfStudy || "",
           graduationYear: profile.graduationYear || "",
@@ -229,4 +229,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

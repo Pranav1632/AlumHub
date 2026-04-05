@@ -15,6 +15,7 @@ const studentProfileSchema = new mongoose.Schema(
     location: String,
     skills: [String],
     interests: [String],
+    achievements: [String],
     linkedIn: String,
     github: String,
     portfolio: String,
