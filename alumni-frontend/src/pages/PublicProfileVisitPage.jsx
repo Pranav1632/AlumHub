@@ -75,6 +75,22 @@ export default function PublicProfileVisitPage() {
 
   const title = useMemo(() => payload?.user?.name || "Profile", [payload]);
   const avatar = payload.profile?.profileImage || defaultAvatar(payload.user?.name);
+  const chatTarget = useMemo(() => {
+    if (!payload.user?._id) return null;
+    return {
+      _id: payload.user._id,
+      name: payload.user.name,
+      email: payload.user.email,
+      prn: payload.user.prn,
+    };
+  }, [payload.user]);
+
+  const openChatWithTarget = () => {
+    if (!chatTarget?._id) return;
+    navigate("/chat", {
+      state: { chatTarget },
+    });
+  };
 
   const sendChatRequest = async () => {
     try {
@@ -101,7 +117,7 @@ export default function PublicProfileVisitPage() {
       setBanner(action === "accepted" ? "Chat request accepted." : "Chat request rejected.");
       await loadChatRequestStatus();
       if (action === "accepted") {
-        navigate("/chat");
+        openChatWithTarget();
       }
     } catch (err) {
       setBanner(getErrorMessage(err, "Failed to update request"));
@@ -171,18 +187,7 @@ export default function PublicProfileVisitPage() {
               <div className="mt-4 space-y-2">
                 {!isSelf && !canRequestChat && (
                   <button
-                    onClick={() =>
-                      navigate("/chat", {
-                        state: {
-                          chatTarget: {
-                            _id: payload.user?._id,
-                            name: payload.user?.name,
-                            email: payload.user?.email,
-                            prn: payload.user?.prn,
-                          },
-                        },
-                      })
-                    }
+                    onClick={openChatWithTarget}
                     className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm"
                   >
                     <FiMessageSquare size={14} /> Private Chat
@@ -235,7 +240,7 @@ export default function PublicProfileVisitPage() {
                 )}
                 {canRequestChat && chatRequestStatus === "accepted" && (
                   <button
-                    onClick={() => navigate("/chat")}
+                    onClick={openChatWithTarget}
                     className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm"
                   >
                     <FiMessageSquare size={14} /> Open Chat

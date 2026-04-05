@@ -7,6 +7,7 @@ const Event = require("../models/Event");
 const Message = require("../models/Message");
 const MentorshipRequest = require("../models/MentorshipRequest");
 const { notifyUser } = require("../utils/notificationService");
+const sendEmail = require("../utils/sendEmail");
 
 const normalizeRole = (role) => (role === "collegeAdmin" ? "admin" : role);
 
@@ -386,6 +387,44 @@ const updateFeedbackStatus = async (req, res) => {
       .populate("handledBy", "name email");
 
     if (!feedback) return res.status(404).json({ msg: "Feedback not found" });
+
+    const statusLabelMap = {
+      open: "Open",
+      in_review: "In Progress",
+      resolved: "Resolved",
+    };
+    const statusLabel = statusLabelMap[status] || status;
+    const io = req.app.get("io");
+
+    await notifyUser({
+      io,
+      collegeId: req.user.collegeId,
+      userId: feedback.userId?._id || feedback.userId,
+      type: "admin_action",
+      title: "Feedback Status Updated",
+      message: `Your ${feedback.category} ticket is now marked as ${statusLabel}.`,
+      meta: {
+        action: "feedback_status_update",
+        feedbackId: feedback._id,
+        status,
+      },
+    });
+
+    if (["in_review", "resolved"].includes(status) && feedback.userId?.email) {
+      const responseSuffix = adminResponse ? `\n\nAdmin Response:\n${adminResponse}` : "";
+      try {
+        await sendEmail({
+          to: feedback.userId.email,
+          subject: `AlumHub ${feedback.category} status: ${statusLabel}`,
+          text: `Hello ${feedback.userId?.name || "User"},\n\nYour ${feedback.category} ticket "${feedback.subject}" is now ${statusLabel}.${responseSuffix}\n\nRegards,\nAlumHub Admin`,
+          html: `<p>Hello ${feedback.userId?.name || "User"},</p><p>Your <b>${feedback.category}</b> ticket "<b>${feedback.subject}</b>" is now <b>${statusLabel}</b>.</p>${
+            adminResponse ? `<p><b>Admin Response:</b><br/>${adminResponse}</p>` : ""
+          }<p>Regards,<br/>AlumHub Admin</p>`,
+        });
+      } catch (mailError) {
+        console.error("Feedback status email warning:", mailError.message);
+      }
+    }
 
     return res.json({
       success: true,

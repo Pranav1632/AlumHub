@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { FiCalendar, FiHome, FiLogOut, FiMessageSquare, FiUser, FiUsers } from "react-icons/fi";
+import { FiCalendar, FiHome, FiLogOut, FiMessageSquare, FiShield, FiUser, FiUsers } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.png";
 import NotificationBell from "./NotificationBell";
@@ -69,7 +69,7 @@ export default function Header() {
                 <FiHome size={15} /> Dashboard
               </NavLink>
               <NavLink to="/discussion" className={navStyle}>
-                <FiUsers size={15} /> Community
+                <FiShield size={15} /> Community
               </NavLink>
               <NavLink to="/events" className={navStyle}>
                 <FiCalendar size={15} /> Events
@@ -128,7 +128,7 @@ export default function Header() {
                 <FiHome size={13} /> Dashboard
               </NavLink>
               <NavLink to="/discussion" className={mobileNavStyle}>
-                <FiUsers size={13} /> Community
+                <FiShield size={13} /> Community
               </NavLink>
               <NavLink to="/events" className={mobileNavStyle}>
                 <FiCalendar size={13} /> Events

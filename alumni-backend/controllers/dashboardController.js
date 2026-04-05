@@ -101,6 +101,7 @@ exports.getDashboardSummary = async (req, res) => {
     }
 
     const collegeId = req.user.collegeId;
+    const isAdminViewer = req.user.role === "admin";
 
     const [
       totalUsers,
@@ -145,6 +146,14 @@ exports.getDashboardSummary = async (req, res) => {
     ]);
 
     const collegeInfo = buildCollegeInfo({ collegeId });
+    const feedbackNews = isAdminViewer
+      ? recentFeedback.map((item) => ({
+          type: item.category,
+          title: `${item.userId?.name || "User"} raised ${item.category}`,
+          summary: item.subject,
+          createdAt: item.createdAt,
+        }))
+      : [];
 
     const collegeNews = [
       ...recentEvents.map((event) => ({
@@ -159,12 +168,7 @@ exports.getDashboardSummary = async (req, res) => {
         summary: String(post.content || "").slice(0, 120),
         createdAt: post.createdAt,
       })),
-      ...recentFeedback.map((item) => ({
-        type: item.category,
-        title: `${item.userId?.name || "User"} raised ${item.category}`,
-        summary: item.subject,
-        createdAt: item.createdAt,
-      })),
+      ...feedbackNews,
     ]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 8);

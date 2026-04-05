@@ -412,8 +412,9 @@ export default function ChatPage() {
 
   useEffect(() => {
     const target = location.state?.chatTarget;
-    if (target?._id) {
-      addOrActivateContact(target);
+    const targetId = normalizeId(target?._id || target?.id);
+    if (targetId) {
+      addOrActivateContact({ ...target, _id: targetId });
     }
   }, [addOrActivateContact, location.state]);
 
@@ -451,7 +452,14 @@ export default function ChatPage() {
       if (additions.length === 0) return prev;
       return [...additions, ...prev];
     });
-  }, [chatRequests, isStudent, meId]);
+
+    if (!activeContactId) {
+      const firstAcceptedPeerId = normalizeId(acceptedPeers[0]?._id);
+      if (firstAcceptedPeerId) {
+        setActiveContactId(firstAcceptedPeerId);
+      }
+    }
+  }, [activeContactId, chatRequests, isStudent, meId]);
 
   useEffect(() => {
     if (!activeContactId) return;

@@ -23,6 +23,7 @@ const toDateInput = (value) => {
 
 export default function CollegeDashboard() {
   const [pendingUsers, setPendingUsers] = useState([]);
+  const [pendingRoleFilter, setPendingRoleFilter] = useState("all");
   const [users, setUsers] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [events, setEvents] = useState([]);
@@ -39,8 +40,10 @@ export default function CollegeDashboard() {
   const loadAll = async () => {
     try {
       setError("");
+      const pendingEndpoint =
+        pendingRoleFilter === "all" ? "/admin/pending" : `/admin/pending?role=${pendingRoleFilter}`;
       const [pendingRes, usersRes, feedbackRes, eventsRes, discussionsRes, analyticsRes, summaryRes] = await Promise.all([
-        api.get("/admin/pending"),
+        api.get(pendingEndpoint),
         api.get("/admin/users"),
         api.get("/admin/feedback"),
         api.get("/events"),
@@ -62,13 +65,18 @@ export default function CollegeDashboard() {
 
   useEffect(() => {
     loadAll();
-  }, []);
+  }, [pendingRoleFilter]);
 
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return users;
     return users.filter((u) => `${u.name} ${u.email} ${u.prn || ""}`.toLowerCase().includes(q));
   }, [users, search]);
+
+  const formatList = (items) => {
+    if (!Array.isArray(items) || items.length === 0) return "-";
+    return items.slice(0, 3).join(", ");
+  };
 
   const verify = async (id) => {
     try {
@@ -196,23 +204,71 @@ export default function CollegeDashboard() {
       </section>
 
       <section className="rounded-xl border bg-white p-4">
-        <h2 className="text-xl font-semibold text-[#123b63] mb-3">Pending Verification Requests</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <h2 className="text-xl font-semibold text-[#123b63]">Pending Verification Requests</h2>
+          <div className="inline-flex rounded-md border border-slate-300 overflow-hidden text-xs">
+            <button
+              onClick={() => setPendingRoleFilter("all")}
+              className={`px-3 py-1.5 ${pendingRoleFilter === "all" ? "bg-[#123b63] text-white" : "bg-white text-slate-700"}`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setPendingRoleFilter("student")}
+              className={`px-3 py-1.5 border-l ${pendingRoleFilter === "student" ? "bg-[#123b63] text-white" : "bg-white text-slate-700"}`}
+            >
+              Student
+            </button>
+            <button
+              onClick={() => setPendingRoleFilter("alumni")}
+              className={`px-3 py-1.5 border-l ${pendingRoleFilter === "alumni" ? "bg-[#123b63] text-white" : "bg-white text-slate-700"}`}
+            >
+              Alumni
+            </button>
+          </div>
+        </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-sm">
+          <table className="w-full min-w-[1300px] text-sm">
             <thead className="bg-slate-100">
               <tr>
-                <th className="p-2 text-left">Name</th><th className="p-2 text-left">Role</th><th className="p-2 text-left">PRN</th>
-                <th className="p-2 text-left">Email/Phone</th><th className="p-2 text-left">Profile</th><th className="p-2 text-left">Action</th>
+                <th className="p-2 text-left">Applicant</th>
+                <th className="p-2 text-left">Identity</th>
+                <th className="p-2 text-left">Verification Flags</th>
+                <th className="p-2 text-left">Academic/Professional</th>
+                <th className="p-2 text-left">Profile Snapshot</th>
+                <th className="p-2 text-left">Action</th>
               </tr>
             </thead>
             <tbody>
               {pendingUsers.map((u) => (
                 <tr key={u._id} className="border-t align-top">
-                  <td className="p-2 font-medium">{u.name}</td>
-                  <td className="p-2 capitalize">{u.role}</td>
-                  <td className="p-2">{u.prn || "-"}</td>
-                  <td className="p-2">{u.email}<p className="text-xs text-slate-500">{u.phone || "No phone"}</p></td>
-                  <td className="p-2">Branch: {u.profile?.branch || "-"}<p className="text-xs text-slate-500">Year: {u.profile?.yearOfStudy || "-"}</p></td>
+                  <td className="p-2">
+                    <p className="font-semibold text-slate-900">{u.name}</p>
+                    <p className="text-xs capitalize text-slate-600">{u.role}</p>
+                  </td>
+                  <td className="p-2 text-xs">
+                    <p>PRN: {u.prn || "-"}</p>
+                    <p>Email: {u.email || "-"}</p>
+                    <p>Phone: {u.phone || "-"}</p>
+                  </td>
+                  <td className="p-2 text-xs">
+                    <p>Email OTP: {u.emailVerified ? "Verified" : "Pending"}</p>
+                    <p>Phone OTP: {u.phoneVerified ? "Verified" : "Pending"}</p>
+                    <p>Admin Approval: {u.verified ? "Approved" : "Pending"}</p>
+                  </td>
+                  <td className="p-2 text-xs">
+                    <p>Branch: {u.profile?.branch || "-"}</p>
+                    <p>Study Year: {u.profile?.yearOfStudy || "-"}</p>
+                    <p>Graduation: {u.profile?.graduationYear || "-"}</p>
+                    <p>Company: {u.profile?.currentCompany || "-"}</p>
+                    <p>Job Title: {u.profile?.jobTitle || "-"}</p>
+                  </td>
+                  <td className="p-2 text-xs">
+                    <p>Location: {u.profile?.location || "-"}</p>
+                    <p>Headline: {u.profile?.headline || "-"}</p>
+                    <p>Skills: {formatList(u.profile?.skills)}</p>
+                    <p>Interests: {formatList(u.profile?.interests)}</p>
+                  </td>
                   <td className="p-2">
                     <button onClick={() => verify(u._id)} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-600 text-white text-xs">
                       <FiCheckCircle size={12} /> Verify
@@ -322,7 +378,7 @@ export default function CollegeDashboard() {
                   className="w-full mt-2 border rounded px-2 py-1 text-xs"
                 />
                 <div className="flex gap-1 mt-1">
-                  <button onClick={() => setFeedbackStatus(f, "in_review")} className="px-2 py-1 border rounded text-xs">In Review</button>
+                  <button onClick={() => setFeedbackStatus(f, "in_review")} className="px-2 py-1 border rounded text-xs">In Progress</button>
                   <button onClick={() => setFeedbackStatus(f, "resolved")} className="px-2 py-1 border rounded text-xs">Resolved</button>
                 </div>
               </div>

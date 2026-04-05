@@ -3,6 +3,10 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const http = require("http");
+const fs = require("fs");
+const path = require("path");
+const net = require("net");
+const { spawn } = require("child_process");
 const { Server } = require("socket.io");
 const helmet = require("helmet");
 const morgan = require("morgan");
@@ -92,7 +96,11 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/health", (req, res) => {
-  res.status(200).json({ ok: true, uptime: process.uptime() });
+  res.status(200).json({
+    ok: true,
+    uptime: process.uptime(),
+    mongoState: mongoose.connection.readyState,
+  });
 });
 
 app.use("/api/auth", authLimiter, authRoutes);
@@ -111,6 +119,9 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
+const DEFAULT_LOCAL_MONGO_BIN = "C:\\Program Files\\MongoDB\\Server\\8.0\\bin\\mongod.exe";
+const DEFAULT_LOCAL_MONGO_DBPATH = path.join(__dirname, "mongodb-data");
+const MONGO_RECOVERY_INTERVAL_MS = Number(process.env.MONGO_RECOVERY_INTERVAL_MS || 10000);
 
 const LEGACY_USER_UNIQUE_INDEXES = ["email_1", "prn_1", "instituteCode_1"];
 
@@ -133,8 +144,138 @@ const ensureUserIndexes = async () => {
   }
 };
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+let mongoRecoveryTimer = null;
+let mongoRecoveryInProgress = false;
+
+const isMongoPortReachable = (host = "127.0.0.1", port = 27017, timeoutMs = 1200) =>
+  new Promise((resolve) => {
+    const socket = net.connect({ host, port });
+
+    const cleanup = (result) => {
+      socket.removeAllListeners();
+      socket.destroy();
+      resolve(result);
+    };
+
+    socket.setTimeout(timeoutMs);
+    socket.on("connect", () => cleanup(true));
+    socket.on("timeout", () => cleanup(false));
+    socket.on("error", () => cleanup(false));
+  });
+
+const shouldTryAutoStartMongo = () => {
+  const flag = String(process.env.AUTO_START_LOCAL_MONGO || "true").toLowerCase();
+  if (flag === "false" || flag === "0" || flag === "no") return false;
+
+  const uri = String(process.env.MONGO_URI || "");
+  return uri.includes("127.0.0.1:27017") || uri.includes("localhost:27017");
+};
+
+const tryAutoStartLocalMongo = async () => {
+  if (!(await isMongoPortReachable("127.0.0.1", 27017))) {
+    const mongoBin = process.env.LOCAL_MONGO_BIN || DEFAULT_LOCAL_MONGO_BIN;
+    const dbPath = process.env.LOCAL_MONGO_DBPATH || DEFAULT_LOCAL_MONGO_DBPATH;
+    const logPath = process.env.LOCAL_MONGO_LOGPATH || path.join(dbPath, "mongod.log");
+
+    if (!fs.existsSync(mongoBin)) {
+      console.error(`Auto-start skipped: mongod binary not found at ${mongoBin}`);
+      return false;
+    }
+
+    try {
+      fs.mkdirSync(dbPath, { recursive: true });
+    } catch (mkdirError) {
+      console.error("Auto-start failed: unable to prepare local MongoDB dbpath.", mkdirError.message);
+      return false;
+    }
+
+    try {
+      const args = ["--dbpath", dbPath, "--bind_ip", "127.0.0.1", "--port", "27017", "--logpath", logPath];
+      const child = spawn(mongoBin, args, {
+        detached: true,
+        windowsHide: true,
+        stdio: "ignore",
+      });
+      child.unref();
+      console.log(`Attempted local MongoDB auto-start with dbPath: ${dbPath}`);
+    } catch (spawnError) {
+      console.error("Auto-start failed: could not spawn mongod.", spawnError.message);
+      return false;
+    }
+
+    await sleep(3500);
+  }
+
+  return isMongoPortReachable("127.0.0.1", 27017);
+};
+
+const stopMongoRecoveryLoop = () => {
+  if (mongoRecoveryTimer) {
+    clearInterval(mongoRecoveryTimer);
+    mongoRecoveryTimer = null;
+  }
+};
+
+const attemptMongoRecovery = async (reason = "unknown") => {
+  if (mongoRecoveryInProgress) return;
+  if (mongoose.connection.readyState === 1) {
+    stopMongoRecoveryLoop();
+    return;
+  }
+  if (mongoose.connection.readyState === 2 || mongoose.connection.readyState === 3) return;
+
+  mongoRecoveryInProgress = true;
+  try {
+    console.warn(`Mongo recovery attempt started (${reason})...`);
+
+    if (shouldTryAutoStartMongo()) {
+      await tryAutoStartLocalMongo();
+    }
+
+    await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000,
+    });
+    console.log("MongoDB reconnected");
+    await ensureUserIndexes();
+    stopMongoRecoveryLoop();
+  } catch (recoveryError) {
+    console.error("Mongo recovery attempt failed:", recoveryError.message);
+  } finally {
+    mongoRecoveryInProgress = false;
+  }
+};
+
+const startMongoRecoveryLoop = (reason = "disconnected") => {
+  if (mongoRecoveryTimer) return;
+  console.warn(`Mongo recovery loop started (${reason}).`);
+  mongoRecoveryTimer = setInterval(() => {
+    attemptMongoRecovery(reason);
+  }, MONGO_RECOVERY_INTERVAL_MS);
+};
+
+const attachMongoConnectionHandlers = () => {
+  mongoose.connection.on("disconnected", () => {
+    console.error("MongoDB disconnected.");
+    startMongoRecoveryLoop("disconnected");
+  });
+
+  mongoose.connection.on("connected", () => {
+    stopMongoRecoveryLoop();
+  });
+
+  mongoose.connection.on("error", (err) => {
+    const msg = String(err?.message || "");
+    console.error("MongoDB runtime error:", msg);
+    if (msg.includes("ECONNREFUSED")) {
+      startMongoRecoveryLoop("runtime-conn-refused");
+    }
+  });
+};
+
 const startServer = async () => {
   try {
+    attachMongoConnectionHandlers();
     await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 5000,
     });
@@ -146,14 +287,39 @@ const startServer = async () => {
       console.log(`Allowed origins: ${allowedOrigins.join(", ")}`);
     });
   } catch (error) {
-    console.error("Failed to start server:", error);
-    if (String(error?.message || "").includes("ECONNREFUSED")) {
-      console.error("MongoDB connection was refused.");
-      console.error("Fix steps:");
-      console.error("1) Ensure MongoDB service is running on your machine.");
-      console.error("2) Verify MONGO_URI inside alumni-backend/.env");
-      console.error("3) For local setup, use mongodb://127.0.0.1:27017/alumniDB");
+    const errorText = String(error?.message || "");
+    const isConnRefused = errorText.includes("ECONNREFUSED");
+
+    if (isConnRefused && shouldTryAutoStartMongo()) {
+      console.warn("MongoDB refused connection. Trying local auto-start...");
+      const started = await tryAutoStartLocalMongo();
+
+      if (started) {
+        try {
+          await mongoose.connect(process.env.MONGO_URI, {
+            serverSelectionTimeoutMS: 5000,
+          });
+          console.log("MongoDB connected after auto-start");
+          await ensureUserIndexes();
+
+          server.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+            console.log(`Allowed origins: ${allowedOrigins.join(", ")}`);
+          });
+          return;
+        } catch (retryError) {
+          console.error("Retry connection after auto-start failed:", retryError.message);
+        }
+      }
     }
+
+    console.error("Failed to start server:", error);
+    console.error("MongoDB connection was refused.");
+    console.error("Fix steps:");
+    console.error("1) Ensure MongoDB service is running on your machine.");
+    console.error("2) Verify MONGO_URI inside alumni-backend/.env");
+    console.error("3) For local setup, use mongodb://127.0.0.1:27017/alumniDB");
+    console.error("4) Optional: set AUTO_START_LOCAL_MONGO=true in .env for auto-start fallback");
     process.exit(1);
   }
 };
