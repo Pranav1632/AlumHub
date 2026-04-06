@@ -3,6 +3,7 @@ const Discussion = require("../models/Discussion");
 const { notifyUser } = require("../utils/notificationService");
 
 const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
+const ADMIN_DISCUSSION_TAGS = new Set(["announcement", "alert", "notice", "update", "event", "opportunity"]);
 
 exports.createDiscussion = async (req, res) => {
   try {
@@ -12,8 +13,17 @@ exports.createDiscussion = async (req, res) => {
 
     const content = String(req.body?.content || "").trim();
     const parentId = req.body?.parentId || null;
+    const tagInput = String(req.body?.tag || "").trim().toLowerCase();
 
     if (!content) return res.status(400).json({ message: "Content is required" });
+
+    if (tagInput && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admin can post tagged community messages" });
+    }
+
+    if (tagInput && !ADMIN_DISCUSSION_TAGS.has(tagInput)) {
+      return res.status(400).json({ message: "Invalid discussion tag" });
+    }
 
     let parentPost = null;
     if (parentId) {
@@ -37,6 +47,7 @@ exports.createDiscussion = async (req, res) => {
       user: req.user.id,
       content,
       parentId,
+      tag: req.user.role === "admin" ? tagInput : "",
     });
 
     const populatedPost = await Discussion.findById(post._id).populate("user", "name role email prn");

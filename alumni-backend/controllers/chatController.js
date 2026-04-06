@@ -399,17 +399,17 @@ exports.createChatRequest = async (req, res) => {
     const receiver = await User.findOne({
       _id: receiverId,
       collegeId: req.user.collegeId,
-      role: "student",
+      role: "alumni",
       verified: true,
       blocked: false,
     }).select("_id name email prn role directChatBlocked");
 
     if (!receiver) {
-      return res.status(404).json({ message: "Student not found in your college" });
+      return res.status(404).json({ message: "Alumni not found in your college" });
     }
 
     if (receiver.directChatBlocked) {
-      return res.status(403).json({ message: "This student is not available for direct chat" });
+      return res.status(403).json({ message: "This alumni user is not available for direct chat" });
     }
 
     const accepted = await ChatRequest.findOne({
@@ -444,7 +444,7 @@ exports.createChatRequest = async (req, res) => {
     }).select("_id");
 
     if (pendingIncoming) {
-      return res.status(400).json({ message: "This student already sent you a request. Accept it from requests." });
+      return res.status(400).json({ message: "This alumni user already has your request pending." });
     }
 
     const request = await ChatRequest.create({
@@ -486,8 +486,8 @@ exports.createChatRequest = async (req, res) => {
 
 exports.listMyChatRequests = async (req, res) => {
   try {
-    if (req.user.role !== "student") {
-      return res.status(403).json({ message: "Only students can access chat requests" });
+    if (!["student", "alumni"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Only students and alumni can access chat requests" });
     }
 
     const type = sanitizeText(req.query.type || "all");
@@ -542,8 +542,8 @@ exports.respondChatRequest = async (req, res) => {
   try {
     if (!ensureDirectChatAccess(req, res)) return;
 
-    if (req.user.role !== "student") {
-      return res.status(403).json({ message: "Only students can respond to chat requests" });
+    if (!["student", "alumni"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Only students and alumni can respond to chat requests" });
     }
 
     const { requestId } = req.params;
@@ -670,8 +670,8 @@ exports.cancelChatRequest = async (req, res) => {
 
 exports.removeChatRequest = async (req, res) => {
   try {
-    if (req.user.role !== "student") {
-      return res.status(403).json({ message: "Only students can remove chat requests" });
+    if (!["student", "alumni"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Only students and alumni can remove chat requests" });
     }
 
     const { requestId } = req.params;
@@ -718,8 +718,8 @@ exports.removeChatRequest = async (req, res) => {
 
 exports.getChatRequestStatusWithUser = async (req, res) => {
   try {
-    if (req.user.role !== "student") {
-      return res.status(403).json({ message: "Only students can check chat request status" });
+    if (!["student", "alumni"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Only students and alumni can check chat request status" });
     }
 
     const { userId } = req.params;
@@ -731,16 +731,33 @@ exports.getChatRequestStatusWithUser = async (req, res) => {
       return res.json({ status: "self", request: null });
     }
 
+    const targetRole = req.user.role === "student" ? "alumni" : "student";
     const targetUser = await User.findOne({
       _id: userId,
       collegeId: req.user.collegeId,
-      role: "student",
+      role: targetRole,
       verified: true,
       blocked: false,
     }).select("_id");
 
     if (!targetUser) {
-      return res.status(404).json({ message: "Student not found in your college" });
+      return res.status(404).json({ message: `${targetRole === "alumni" ? "Alumni" : "Student"} not found in your college` });
+    }
+
+    const accepted = await ChatRequest.findOne({
+      collegeId: req.user.collegeId,
+      status: "accepted",
+      $or: [
+        { requester: req.user._id, receiver: targetUser._id },
+        { requester: targetUser._id, receiver: req.user._id },
+      ],
+    })
+      .sort({ createdAt: -1 })
+      .populate("requester", "name prn email role")
+      .populate("receiver", "name prn email role");
+
+    if (accepted) {
+      return res.json({ status: "accepted", request: accepted });
     }
 
     const latest = await ChatRequest.findOne({

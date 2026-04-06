@@ -13,6 +13,13 @@
       "password": "Admin@123",
       "collegeId": "1234",
       "instituteCode": "INST002"
+    },
+    {
+      "name": "College 3 Admin",
+      "email": "admin2@alumhub.demoo",
+      "password": "Admin@123",
+      "collegeId": "1234",
+      "instituteCode": "INST0022"
     }
   ]
 }

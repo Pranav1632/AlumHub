@@ -21,7 +21,11 @@ const canMessageDirectly = async ({ collegeId, senderUser, receiverUser }) => {
     return { allowed: false, reason: "This user cannot be contacted via direct chat right now" };
   }
 
-  if (senderRole === "student" && receiverRole === "student") {
+  const isStudentAlumniPair =
+    (senderRole === "student" && receiverRole === "alumni") ||
+    (senderRole === "alumni" && receiverRole === "student");
+
+  if (isStudentAlumniPair) {
     const accepted = await ChatRequest.findOne({
       collegeId,
       status: "accepted",
@@ -34,7 +38,7 @@ const canMessageDirectly = async ({ collegeId, senderUser, receiverUser }) => {
     if (!accepted) {
       return {
         allowed: false,
-        reason: "Student-to-student chat requires accepted chat request",
+        reason: "Student-alumni chat requires an accepted chat request",
       };
     }
   }
