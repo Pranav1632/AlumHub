@@ -1,0 +1,127 @@
+# AlumHub
+
+AlumHub is a college-scoped alumni networking platform built with a React frontend and Node.js/Express backend. It connects students, alumni, and admins through mentorship, private chat, community discussions, events, notifications, and feedback workflows.
+
+## Tech Stack
+
+- Frontend: React, Vite, React Router, Axios, Socket.IO Client, Tailwind CSS
+- Backend: Node.js, Express, Mongoose, JWT, Socket.IO, Nodemailer
+- Database: MongoDB
+
+## Core Features
+
+- Role-based portals: `student`, `alumni`, `admin`
+- Signup with verification flow
+- Admin approval for student/alumni accounts
+- Student and alumni profile management
+- Verified alumni directory
+- Mentorship request lifecycle (create, accept, reject, track)
+- Real-time private messaging with delivery/read states
+- Student chat-request permission flow
+- Community discussions with replies, likes, and upvotes
+- Admin moderation and access controls
+- Events management
+- In-app notifications
+- Feedback/complaint/suggestion/bug reporting
+- Dashboard analytics
+
+## Project Structure
+
+```text
+alumHub/
+  alumni-backend/
+    controllers/
+    models/
+    routes/
+    middleware/
+    socket/
+    utils/
+    server.js
+  alumni-frontend/
+    src/
+      pages/
+      components/
+      context/
+      utils/
+    index.html
+```
+
+## Setup
+
+## 1) Clone and install
+
+```bash
+git clone <your-repo-url>
+cd alumHub
+cd alumni-backend && npm install
+cd ../alumni-frontend && npm install
+```
+
+## 2) Configure backend environment
+
+Create `alumni-backend/.env` and set:
+
+```env
+PORT=5000
+MONGO_URI=mongodb://127.0.0.1:27017/alumniDB
+JWT_SECRET=your_jwt_secret
+CLIENT_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+```
+
+Add mail credentials if email sending is enabled in your environment.
+
+## 3) Run backend
+
+```bash
+cd alumni-backend
+npm run dev
+```
+
+## 4) Run frontend
+
+```bash
+cd alumni-frontend
+npm run dev
+```
+
+Frontend default URL: `http://localhost:5173`  
+Backend base URL: `http://localhost:5000/api`
+
+## Main API Modules
+
+- `/api/auth` - signup, login, verification, auth me
+- `/api/admin` - verification, moderation, analytics, feedback handling
+- `/api/user` - profile fetch/update and public profile visit
+- `/api/alumni` - verified alumni listing
+- `/api/mentorship` - mentorship requests
+- `/api/chat` - messaging and chat requests
+- `/api/discussions` - posts, replies, reactions
+- `/api/events` - event CRUD
+- `/api/notifications` - notification list/read
+- `/api/dashboard` - summary metrics and news
+
+## Security Notes
+
+- JWT authentication on protected APIs
+- Role-based authorization middleware
+- CORS allowlist via `CLIENT_ORIGINS`
+- Helmet security headers
+- Request rate limiting on auth and API routes
+- College-level isolation using `collegeId`
+
+## Testing
+
+- Postman collection flow is documented in:
+  - `POSTMAN_TESTING.md`
+
+## Future Improvements
+
+- Automated unit and integration tests
+- CI pipeline for lint/test/build
+- Rich file/media messaging support
+- Advanced analytics and reporting exports
+
+## License
+
+`[[ADD LICENSE HERE]]`
+
