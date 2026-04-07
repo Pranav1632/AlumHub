@@ -52,6 +52,8 @@ export default function ChatPage() {
   const location = useLocation();
   const meId = user?.id || user?._id;
   const isStudent = user?.role === "student";
+  const isAlumni = user?.role === "alumni";
+  const canManageChatRequests = isStudent || isAlumni;
 
   const [contacts, setContacts] = useState([]);
   const [activeContactId, setActiveContactId] = useState("");
@@ -227,7 +229,7 @@ export default function ChatPage() {
   }, []);
 
   const fetchRequests = useCallback(async () => {
-    if (!isStudent) return;
+    if (!canManageChatRequests) return;
     try {
       setLoadingRequests(true);
       const res = await api.get("/chat/requests?type=all");
@@ -237,7 +239,7 @@ export default function ChatPage() {
     } finally {
       setLoadingRequests(false);
     }
-  }, [isStudent]);
+  }, [canManageChatRequests]);
 
   const respondRequest = useCallback(
     async (requestId, action) => {
@@ -248,14 +250,20 @@ export default function ChatPage() {
           prev.map((req) => (normalizeId(req._id) === normalizeId(updatedReq?._id) ? updatedReq : req))
         );
 
-        if (action === "accepted" && updatedReq?.requester) {
-          addOrActivateContact(updatedReq.requester);
+        if (action === "accepted" && updatedReq) {
+          const peer =
+            normalizeId(updatedReq.requester?._id) === normalizeId(meId)
+              ? updatedReq.receiver
+              : updatedReq.requester;
+          if (peer?._id) {
+            addOrActivateContact(peer);
+          }
         }
       } catch (err) {
         setError(getErrorMessage(err, "Could not respond to request"));
       }
     },
-    [addOrActivateContact]
+    [addOrActivateContact, meId]
   );
 
   const cancelRequest = useCallback(async (requestId) => {
@@ -419,15 +427,15 @@ export default function ChatPage() {
   }, [addOrActivateContact, location.state]);
 
   useEffect(() => {
-    if (!isStudent) return undefined;
+    if (!canManageChatRequests) return undefined;
     const timer = setInterval(() => {
       fetchRequests();
     }, 10000);
     return () => clearInterval(timer);
-  }, [fetchRequests, isStudent]);
+  }, [canManageChatRequests, fetchRequests]);
 
   useEffect(() => {
-    if (!isStudent) return;
+    if (!canManageChatRequests) return;
     const acceptedPeers = chatRequests
       .filter((r) => r.status === "accepted")
       .map((r) =>
@@ -459,7 +467,7 @@ export default function ChatPage() {
         setActiveContactId(firstAcceptedPeerId);
       }
     }
-  }, [activeContactId, chatRequests, isStudent, meId]);
+  }, [activeContactId, canManageChatRequests, chatRequests, meId]);
 
   useEffect(() => {
     if (!activeContactId) return;
@@ -755,7 +763,7 @@ export default function ChatPage() {
             })}
           </div>
 
-          {isStudent && (
+          {canManageChatRequests && (
             <div className="border-t border-slate-200 p-2 bg-white">
               <div className="flex items-center justify-between mb-2 gap-2">
                 <p className="text-xs font-semibold text-slate-700">Chat Requests</p>
@@ -815,50 +823,56 @@ export default function ChatPage() {
                   </>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => setShowOutgoingRequests((v) => !v)}
-                  className="w-full text-left text-[11px] px-2 py-1.5 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 inline-flex items-center justify-between"
-                >
-                  <span className="font-medium text-slate-700">
-                    Sent ({outgoingPending.length})
-                  </span>
-                  {showOutgoingRequests ? <FiChevronDown size={13} /> : <FiChevronRight size={13} />}
-                </button>
-
-                {showOutgoingRequests && (
+                {(isStudent || outgoingPending.length > 0) && (
                   <>
-                    {!loadingRequests && outgoingPending.length === 0 && (
-                      <p className="text-[11px] text-slate-500 px-1">No sent requests.</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowOutgoingRequests((v) => !v)}
+                      className="w-full text-left text-[11px] px-2 py-1.5 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 inline-flex items-center justify-between"
+                    >
+                      <span className="font-medium text-slate-700">
+                        Sent ({outgoingPending.length})
+                      </span>
+                      {showOutgoingRequests ? <FiChevronDown size={13} /> : <FiChevronRight size={13} />}
+                    </button>
+
+                    {showOutgoingRequests && (
+                      <>
+                        {!loadingRequests && outgoingPending.length === 0 && (
+                          <p className="text-[11px] text-slate-500 px-1">No sent requests.</p>
+                        )}
+                        {outgoingPending.map((req) => (
+                          <div key={normalizeId(req._id)} className="rounded border border-slate-200 bg-slate-50 p-2">
+                            <p className="text-xs font-medium text-slate-800 truncate">
+                              {req.receiver?.name} ({req.receiver?.prn || "PRN"})
+                            </p>
+                            {req.note && <p className="text-[11px] text-slate-500 break-words mt-0.5">{req.note}</p>}
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {isStudent && (
+                                <button
+                                  onClick={() => cancelRequest(req._id)}
+                                  className="text-[11px] px-2 py-1 rounded border border-amber-300 text-amber-700"
+                                >
+                                  Cancel
+                                </button>
+                              )}
+                              <button
+                                onClick={() => removeRequest(req._id)}
+                                className="text-[11px] px-2 py-1 rounded border border-slate-300"
+                              >
+                                Remove
+                              </button>
+                              <button
+                                onClick={() => navigate(`/profile/visit/${normalizeId(req.receiver?._id)}`)}
+                                className="text-[11px] px-2 py-1 rounded border border-slate-300"
+                              >
+                                Profile
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </>
                     )}
-                    {outgoingPending.map((req) => (
-                      <div key={normalizeId(req._id)} className="rounded border border-slate-200 bg-slate-50 p-2">
-                        <p className="text-xs font-medium text-slate-800 truncate">
-                          {req.receiver?.name} ({req.receiver?.prn || "PRN"})
-                        </p>
-                        {req.note && <p className="text-[11px] text-slate-500 break-words mt-0.5">{req.note}</p>}
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          <button
-                            onClick={() => cancelRequest(req._id)}
-                            className="text-[11px] px-2 py-1 rounded border border-amber-300 text-amber-700"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => removeRequest(req._id)}
-                            className="text-[11px] px-2 py-1 rounded border border-slate-300"
-                          >
-                            Remove
-                          </button>
-                          <button
-                            onClick={() => navigate(`/profile/visit/${normalizeId(req.receiver?._id)}`)}
-                            className="text-[11px] px-2 py-1 rounded border border-slate-300"
-                          >
-                            Profile
-                          </button>
-                        </div>
-                      </div>
-                    ))}
                   </>
                 )}
               </div>

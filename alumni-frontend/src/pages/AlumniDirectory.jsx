@@ -127,7 +127,11 @@ export default function AlumniDirectory() {
             <p><span className="font-medium">Email:</span> {selected.email}</p>
             <p><span className="font-medium">Role:</span> {selected.role}</p>
             <button
-              onClick={() =>
+              onClick={() => {
+                if (isStudent) {
+                  navigate(`/profile/visit/${selected._id}`);
+                  return;
+                }
                 navigate("/chat", {
                   state: {
                     chatTarget: {
@@ -137,11 +141,15 @@ export default function AlumniDirectory() {
                       prn: selected.prn,
                     },
                   },
-                })
-              }
-              className="w-full mt-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded border border-emerald-300 text-emerald-700 text-sm hover:bg-emerald-50"
+                });
+              }}
+              className={`w-full mt-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded border text-sm ${
+                isStudent
+                  ? "border-blue-300 text-blue-700 hover:bg-blue-50"
+                  : "border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+              }`}
             >
-              Private Chat
+              {isStudent ? "View Profile / Request Chat" : "Private Chat"}
             </button>
           </div>
         )}

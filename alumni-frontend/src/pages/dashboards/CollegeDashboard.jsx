@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiCheckCircle, FiEdit2, FiRefreshCw, FiTrash2 } from "react-icons/fi";
 import api from "../../utils/axiosInstance";
 
@@ -37,7 +37,7 @@ export default function CollegeDashboard() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
 
-  const loadAll = async () => {
+  const loadAll = useCallback(async () => {
     try {
       setError("");
       const pendingEndpoint =
@@ -61,11 +61,11 @@ export default function CollegeDashboard() {
     } catch (err) {
       setError(err.response?.data?.msg || "Unable to load admin dashboard");
     }
-  };
+  }, [pendingRoleFilter]);
 
   useEffect(() => {
     loadAll();
-  }, [pendingRoleFilter]);
+  }, [loadAll]);
 
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -388,25 +388,39 @@ export default function CollegeDashboard() {
       </section>
 
       <section className="grid lg:grid-cols-2 gap-4">
-        <div className="rounded-xl border bg-white p-4">
-          <h2 className="text-lg font-semibold text-[#123b63]">College Information</h2>
+        <div className="rounded-2xl border border-sky-800 bg-gradient-to-br from-[#0c2d53] via-[#114075] to-[#1f5e9c] p-4 text-white shadow-md">
+          <h2 className="text-lg font-semibold text-white">College Information</h2>
           <p className="text-sm mt-2 font-medium">{summary?.collegeInfo?.name || "-"}</p>
-          <p className="text-sm text-slate-600">{summary?.collegeInfo?.location || "-"} | {summary?.collegeInfo?.accreditation || "-"}</p>
-          <p className="text-xs text-slate-500 mt-1">Focus: {Array.isArray(summary?.collegeInfo?.focusAreas) ? summary.collegeInfo.focusAreas.join(", ") : "-"}</p>
+          <p className="text-sm text-blue-100">{summary?.collegeInfo?.location || "-"} | {summary?.collegeInfo?.accreditation || "-"}</p>
+          <p className="text-xs text-blue-100 mt-1">Focus: {Array.isArray(summary?.collegeInfo?.focusAreas) ? summary.collegeInfo.focusAreas.join(", ") : "-"}</p>
           <div className="mt-3 space-y-2">
             {(summary?.collegeNews || []).slice(0, 5).map((n, i) => (
-              <div key={`${n.title}-${i}`} className="border rounded p-2 text-sm">
-                <p className="font-medium">{n.title}</p>
-                <p className="text-xs text-slate-600">{n.summary}</p>
+              <div
+                key={`${n.title}-${i}`}
+                className="border border-white/25 rounded-lg p-2 text-sm bg-white/10 transition-all duration-200 hover:bg-white/20 hover:-translate-y-0.5"
+              >
+                <p className="font-medium text-white">{n.title}</p>
+                <p className="text-xs text-blue-100">{n.summary}</p>
               </div>
             ))}
           </div>
         </div>
-        <div className="rounded-xl border bg-white p-4">
-          <h2 className="text-lg font-semibold text-[#123b63]">World Tech News</h2>
+        <div className="rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-[#123b63]">World Tech News</h2>
+            <span className="text-[11px] uppercase tracking-wide text-indigo-700 bg-indigo-100 px-2 py-1 rounded-full">
+              Live Feed
+            </span>
+          </div>
           <div className="mt-3 space-y-2">
             {(summary?.techNews || []).slice(0, 6).map((n, i) => (
-              <a key={`${n.title}-${i}`} href={n.url} target="_blank" rel="noreferrer" className="block border rounded p-2 hover:bg-slate-50">
+              <a
+                key={`${n.title}-${i}`}
+                href={n.url}
+                target="_blank"
+                rel="noreferrer"
+                className="block border border-slate-200 rounded-lg p-2 bg-gradient-to-r from-white via-slate-50 to-indigo-50/50 transition-all duration-200 hover:border-indigo-200 hover:shadow-sm hover:-translate-y-0.5"
+              >
                 <p className="text-sm font-medium">{n.title}</p>
                 <p className="text-xs text-slate-600">{n.source}</p>
               </a>

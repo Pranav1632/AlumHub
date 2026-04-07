@@ -97,30 +97,39 @@ export default function StudentDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4 mt-6">
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-          <h3 className="font-semibold text-slate-800">College Information & News</h3>
-          <p className="text-sm text-slate-700 mt-2 font-medium">{summary?.collegeInfo?.name || "College Network"}</p>
-          <p className="text-xs text-slate-500">
+        <div className="relative overflow-hidden bg-gradient-to-br from-sky-900 via-blue-900 to-slate-900 border border-sky-800 rounded-2xl p-5 shadow-md text-white">
+          <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-sky-400/20 blur-2xl pointer-events-none" />
+          <h3 className="font-semibold text-sky-100">College Information & News</h3>
+          <p className="text-sm text-white mt-2 font-medium">{summary?.collegeInfo?.name || "College Network"}</p>
+          <p className="text-xs text-sky-100/90">
             {summary?.collegeInfo?.location || "-"} | {summary?.collegeInfo?.accreditation || "-"}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-sky-100/90 mt-1">
             Focus Areas: {Array.isArray(summary?.collegeInfo?.focusAreas) ? summary.collegeInfo.focusAreas.join(", ") : "-"}
           </p>
           <div className="space-y-2 mt-3">
             {(summary?.collegeNews || []).slice(0, 4).map((item, idx) => (
-              <div key={`${item.title}-${idx}`} className="border rounded-lg p-2 bg-slate-50">
-                <p className="text-sm font-medium text-slate-800">{item.title}</p>
-                <p className="text-xs text-slate-600">{item.summary}</p>
+              <div
+                key={`${item.title}-${idx}`}
+                className="border border-white/20 rounded-lg p-2 bg-white/10 backdrop-blur-sm transition-all duration-200 hover:bg-white/20 hover:-translate-y-0.5"
+              >
+                <p className="text-sm font-medium text-white">{item.title}</p>
+                <p className="text-xs text-sky-100/90">{item.summary}</p>
               </div>
             ))}
             {(summary?.collegeNews || []).length === 0 && (
-              <p className="text-sm text-slate-500">No recent college updates.</p>
+              <p className="text-sm text-sky-100">No recent college updates.</p>
             )}
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-          <h3 className="font-semibold text-slate-800">World Tech News</h3>
+        <div className="bg-white border border-indigo-100 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="font-semibold text-slate-800">World Tech News</h3>
+            <span className="text-[11px] uppercase tracking-wide text-indigo-700 bg-indigo-100 px-2 py-1 rounded-full">
+              Live Feed
+            </span>
+          </div>
           <div className="space-y-2 mt-3">
             {(summary?.techNews || []).slice(0, 5).map((item, idx) => (
               <a
@@ -128,7 +137,7 @@ export default function StudentDashboard() {
                 href={item.url}
                 target="_blank"
                 rel="noreferrer"
-                className="block border rounded-lg p-2 hover:bg-slate-50"
+                className="block border border-slate-200 rounded-lg p-2 bg-gradient-to-r from-white via-slate-50 to-indigo-50/50 transition-all duration-200 hover:border-indigo-200 hover:shadow-sm hover:-translate-y-0.5"
               >
                 <p className="text-sm font-medium text-slate-800">{item.title}</p>
                 <p className="text-xs text-slate-500">{item.source}</p>

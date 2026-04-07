@@ -29,7 +29,9 @@ export default function PublicProfileVisitPage() {
   const [banner, setBanner] = useState("");
 
   const isSelf = normalizeId(me?.id || me?._id) === normalizeId(id);
-  const canRequestChat = me?.role === "student" && payload.user?.role === "student" && !isSelf;
+  const isStudentToAlumniRequestFlow = me?.role === "student" && payload.user?.role === "alumni" && !isSelf;
+  const isAlumniToStudentRequestFlow = me?.role === "alumni" && payload.user?.role === "student" && !isSelf;
+  const canUseRequestFlow = isStudentToAlumniRequestFlow || isAlumniToStudentRequestFlow;
 
   function normalizeId(value) {
     if (!value) return "";
@@ -55,7 +57,11 @@ export default function PublicProfileVisitPage() {
   }, [id]);
 
   const loadChatRequestStatus = useCallback(async () => {
-    if (!canRequestChat) return;
+    if (!canUseRequestFlow) {
+      setChatRequestStatus("none");
+      setChatRequestId("");
+      return;
+    }
     try {
       const res = await api.get(`/chat/request/status/${id}`);
       setChatRequestStatus(res.data?.status || "none");
@@ -63,7 +69,7 @@ export default function PublicProfileVisitPage() {
     } catch (err) {
       setError(getErrorMessage(err, "Could not load chat request status"));
     }
-  }, [canRequestChat, id]);
+  }, [canUseRequestFlow, id]);
 
   useEffect(() => {
     loadProfile();
@@ -185,7 +191,7 @@ export default function PublicProfileVisitPage() {
               <p className="text-xs text-slate-500 text-center mt-1">{payload.user.prn || payload.user.email}</p>
 
               <div className="mt-4 space-y-2">
-                {!isSelf && !canRequestChat && (
+                {!isSelf && !canUseRequestFlow && (
                   <button
                     onClick={openChatWithTarget}
                     className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm"
@@ -194,32 +200,40 @@ export default function PublicProfileVisitPage() {
                   </button>
                 )}
 
-                {canRequestChat && ["none", "rejected", "cancelled"].includes(chatRequestStatus) && (
+                {isStudentToAlumniRequestFlow && ["none", "rejected", "cancelled"].includes(chatRequestStatus) && (
                   <button
                     onClick={sendChatRequest}
                     disabled={requestLoading}
                     className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm disabled:bg-blue-300"
                   >
-                    <FiMessageSquare size={14} /> {requestLoading ? "Sending..." : "Request To Message"}
+                    <FiMessageSquare size={14} /> {requestLoading ? "Sending..." : "Request Alumni Chat"}
                   </button>
                 )}
-                {canRequestChat && chatRequestStatus === "pending_outgoing" && (
+                {canUseRequestFlow && chatRequestStatus === "pending_outgoing" && (
                   <div className="space-y-2">
                     <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-                      Request pending. Wait for acceptance.
+                      {isStudentToAlumniRequestFlow
+                        ? "Request pending. Wait for acceptance."
+                        : "A request is already pending for this user."}
                     </p>
-                    <button
-                      onClick={cancelOutgoing}
-                      disabled={requestLoading}
-                      className="w-full text-xs px-2 py-2 rounded border border-amber-300 text-amber-700"
-                    >
-                      Cancel Request
-                    </button>
+                    {isStudentToAlumniRequestFlow && (
+                      <button
+                        onClick={cancelOutgoing}
+                        disabled={requestLoading}
+                        className="w-full text-xs px-2 py-2 rounded border border-amber-300 text-amber-700"
+                      >
+                        Cancel Request
+                      </button>
+                    )}
                   </div>
                 )}
-                {canRequestChat && chatRequestStatus === "pending_incoming" && (
+                {canUseRequestFlow && chatRequestStatus === "pending_incoming" && (
                   <div className="space-y-2">
-                    <p className="text-xs text-slate-600">This user requested to message you.</p>
+                    <p className="text-xs text-slate-600">
+                      {isAlumniToStudentRequestFlow
+                        ? "This student requested a private chat with you."
+                        : "This user requested to message you."}
+                    </p>
                     <div className="flex gap-2">
                       <button
                         onClick={() => respondIncoming("accepted")}
@@ -238,7 +252,7 @@ export default function PublicProfileVisitPage() {
                     </div>
                   </div>
                 )}
-                {canRequestChat && chatRequestStatus === "accepted" && (
+                {canUseRequestFlow && chatRequestStatus === "accepted" && (
                   <button
                     onClick={openChatWithTarget}
                     className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm"
@@ -246,7 +260,7 @@ export default function PublicProfileVisitPage() {
                     <FiMessageSquare size={14} /> Open Chat
                   </button>
                 )}
-                {canRequestChat && ["rejected", "cancelled"].includes(chatRequestStatus) && (
+                {isStudentToAlumniRequestFlow && ["rejected", "cancelled"].includes(chatRequestStatus) && (
                   <button
                     onClick={removeRequestRecord}
                     disabled={requestLoading}
@@ -254,6 +268,11 @@ export default function PublicProfileVisitPage() {
                   >
                     Remove Old Request
                   </button>
+                )}
+                {isAlumniToStudentRequestFlow && ["none", "rejected", "cancelled"].includes(chatRequestStatus) && (
+                  <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded p-2">
+                    Student can request private chat from this profile. You can accept it from here or from chat requests.
+                  </p>
                 )}
                 {banner && (
                   <p className="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded p-2">{banner}</p>

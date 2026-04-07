@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BiUpvote } from "react-icons/bi";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
-import { FiMessageCircle, FiMessageSquare, FiSearch, FiSend, FiUser } from "react-icons/fi";
+import { FiMessageCircle, FiMessageSquare, FiSearch, FiSend } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import api from "../utils/axiosInstance";
 import { getErrorMessage } from "../utils/errorUtils";
@@ -17,14 +17,53 @@ const normalizeId = (value) => {
   return String(value);
 };
 
+const ADMIN_TAG_OPTIONS = [
+  { value: "", label: "No tag (general)" },
+  { value: "announcement", label: "Announcement" },
+  { value: "alert", label: "Alert" },
+  { value: "notice", label: "Notice" },
+  { value: "update", label: "Update" },
+  { value: "event", label: "Event" },
+  { value: "opportunity", label: "Opportunity" },
+];
+
+const TAG_STYLE = {
+  announcement: {
+    badge: "bg-indigo-100 text-indigo-800 border-indigo-200",
+    surface: "bg-indigo-50/70 border-indigo-200",
+  },
+  alert: {
+    badge: "bg-red-100 text-red-800 border-red-200",
+    surface: "bg-red-50/80 border-red-200",
+  },
+  notice: {
+    badge: "bg-amber-100 text-amber-800 border-amber-200",
+    surface: "bg-amber-50/80 border-amber-200",
+  },
+  update: {
+    badge: "bg-blue-100 text-blue-800 border-blue-200",
+    surface: "bg-blue-50/70 border-blue-200",
+  },
+  event: {
+    badge: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    surface: "bg-emerald-50/70 border-emerald-200",
+  },
+  opportunity: {
+    badge: "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200",
+    surface: "bg-fuchsia-50/70 border-fuchsia-200",
+  },
+};
+
 export default function DiscussionPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const meId = user?.id || user?._id;
+  const isAdmin = user?.role === "admin";
 
   const [posts, setPosts] = useState([]);
   const [search, setSearch] = useState("");
   const [postText, setPostText] = useState("");
+  const [postTag, setPostTag] = useState("");
   const [replyDrafts, setReplyDrafts] = useState({});
   const [replyOpenFor, setReplyOpenFor] = useState({});
   const [replyListOpenFor, setReplyListOpenFor] = useState({});
@@ -78,8 +117,12 @@ export default function DiscussionPage() {
     if (!content) return;
     try {
       setPosting(true);
-      await api.post("/discussions", { content });
+      await api.post("/discussions", {
+        content,
+        ...(isAdmin && postTag ? { tag: postTag } : {}),
+      });
       setPostText("");
+      setPostTag("");
       await loadPosts();
     } catch (err) {
       setError(getErrorMessage(err, "Failed to post discussion"));
@@ -128,9 +171,15 @@ export default function DiscussionPage() {
     const userName = post.user?.name || "User";
     const userId = normalizeId(post.user?._id);
     const avatar = avatarFromName(userName);
+    const postRole = String(post.user?.role || "").toLowerCase();
+    const isAdminPost = ["admin", "collegeadmin", "superadmin"].includes(postRole);
+    const postTag = String(post.tag || "").toLowerCase();
+    const tagStyle = TAG_STYLE[postTag];
+    const cardToneClass = tagStyle?.surface || (isAdminPost ? "bg-sky-50/80 border-sky-200" : "bg-white border-slate-200");
+    const isStudentToAlumni = user?.role === "student" && postRole === "alumni";
 
     return (
-      <div key={postId} className={`rounded-xl border border-slate-200 bg-white p-4 ${isReply ? "ml-3 sm:ml-8 mt-2" : ""}`}>
+      <div key={postId} className={`rounded-xl border p-4 transition-all duration-200 hover:shadow-sm ${cardToneClass} ${isReply ? "ml-3 sm:ml-8 mt-2" : ""}`}>
         <div className="flex items-start gap-3">
           <button
             onClick={() => navigate(`/profile/visit/${normalizeId(post.user?._id)}`)}
@@ -151,6 +200,16 @@ export default function DiscussionPage() {
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-semibold text-slate-800">{userName}</p>
               <span className="text-[11px] text-slate-500 capitalize">{post.user?.role || "member"}</span>
+              {postTag && (
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold uppercase tracking-wide ${tagStyle?.badge || "bg-slate-100 text-slate-700 border-slate-200"}`}>
+                  {postTag}
+                </span>
+              )}
+              {!postTag && isAdminPost && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full border border-sky-200 bg-sky-100 text-sky-800 font-semibold uppercase tracking-wide">
+                  Admin Highlight
+                </span>
+              )}
               <span className="text-[11px] text-slate-400">{new Date(post.createdAt).toLocaleString()}</span>
             </div>
             <p className="text-slate-700 mt-1 whitespace-pre-wrap">{post.content}</p>
@@ -185,7 +244,11 @@ export default function DiscussionPage() {
                 normalizeId(meId) !== userId &&
                 !(user?.role === "student" && post.user?.role === "student") && (
                 <button
-                  onClick={() =>
+                  onClick={() => {
+                    if (isStudentToAlumni) {
+                      navigate(`/profile/visit/${userId}`);
+                      return;
+                    }
                     navigate("/chat", {
                       state: {
                         chatTarget: {
@@ -195,11 +258,11 @@ export default function DiscussionPage() {
                           prn: post.user?.prn,
                         },
                       },
-                    })
-                  }
+                    });
+                  }}
                   className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-emerald-300 text-emerald-700 hover:bg-emerald-50"
                 >
-                  <FiMessageSquare size={14} /> Private Chat
+                  <FiMessageSquare size={14} /> {isStudentToAlumni ? "Request Chat" : "Private Chat"}
                 </button>
               )}
               {!isReply && replies.length > 0 && (
@@ -278,6 +341,22 @@ export default function DiscussionPage() {
 
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[min(1024px,92vw)] z-30">
         <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-3">
+          {isAdmin && (
+            <div className="mb-2">
+              <label className="text-xs font-medium text-slate-600 block mb-1">Admin Tag</label>
+              <select
+                value={postTag}
+                onChange={(e) => setPostTag(e.target.value)}
+                className="w-full sm:w-72 border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+              >
+                {ADMIN_TAG_OPTIONS.map((option) => (
+                  <option key={option.value || "none"} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <textarea
             rows={2}
             maxLength={3000}
