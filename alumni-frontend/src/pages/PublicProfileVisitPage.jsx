@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FaGithub, FaLinkedin, FaMapMarkerAlt } from "react-icons/fa";
-import { FiArrowLeft, FiMessageSquare, FiUser } from "react-icons/fi";
+import { FiArrowLeft, FiMessageSquare, FiSend, FiUser } from "react-icons/fi";
 import api from "../utils/axiosInstance";
 import { getErrorMessage } from "../utils/errorUtils";
 import { useAuth } from "../context/AuthContext";
@@ -15,30 +15,31 @@ const listOrDash = (value) => {
 const defaultAvatar = (name) =>
   `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name || "User")}`;
 
+const normalizeId = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") return value._id ? String(value._id) : "";
+  return String(value);
+};
+
 export default function PublicProfileVisitPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user: me } = useAuth();
 
   const [payload, setPayload] = useState({ user: null, profile: null });
-  const [chatRequestStatus, setChatRequestStatus] = useState("none");
-  const [chatRequestId, setChatRequestId] = useState("");
+  const [requestMessage, setRequestMessage] = useState(
+    "I would like mentorship guidance on academics/career planning."
+  );
   const [requestLoading, setRequestLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [banner, setBanner] = useState("");
 
   const isSelf = normalizeId(me?.id || me?._id) === normalizeId(id);
-  const isStudentToAlumniRequestFlow = me?.role === "student" && payload.user?.role === "alumni" && !isSelf;
-  const isAlumniToStudentRequestFlow = me?.role === "alumni" && payload.user?.role === "student" && !isSelf;
-  const canUseRequestFlow = isStudentToAlumniRequestFlow || isAlumniToStudentRequestFlow;
-
-  function normalizeId(value) {
-    if (!value) return "";
-    if (typeof value === "string") return value;
-    if (typeof value === "object") return value._id ? String(value._id) : "";
-    return String(value);
-  }
+  const isStudentToAlumniFlow = me?.role === "student" && payload.user?.role === "alumni" && !isSelf;
+  const isAlumniToStudentFlow = me?.role === "alumni" && payload.user?.role === "student" && !isSelf;
+  const allowPrivateChat = !isSelf && !isStudentToAlumniFlow && !isAlumniToStudentFlow;
 
   const loadProfile = useCallback(async () => {
     try {
@@ -56,28 +57,9 @@ export default function PublicProfileVisitPage() {
     }
   }, [id]);
 
-  const loadChatRequestStatus = useCallback(async () => {
-    if (!canUseRequestFlow) {
-      setChatRequestStatus("none");
-      setChatRequestId("");
-      return;
-    }
-    try {
-      const res = await api.get(`/chat/request/status/${id}`);
-      setChatRequestStatus(res.data?.status || "none");
-      setChatRequestId(res.data?.request?._id || "");
-    } catch (err) {
-      setError(getErrorMessage(err, "Could not load chat request status"));
-    }
-  }, [canUseRequestFlow, id]);
-
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
-
-  useEffect(() => {
-    loadChatRequestStatus();
-  }, [loadChatRequestStatus]);
 
   const title = useMemo(() => payload?.user?.name || "Profile", [payload]);
   const avatar = payload.profile?.profileImage || defaultAvatar(payload.user?.name);
@@ -98,72 +80,29 @@ export default function PublicProfileVisitPage() {
     });
   };
 
-  const sendChatRequest = async () => {
+  const sendMentorshipRequest = async () => {
+    if (!requestMessage.trim()) {
+      setBanner("Please add a short mentorship message.");
+      return;
+    }
+
     try {
       setRequestLoading(true);
       setBanner("");
-      await api.post(`/chat/request/${id}`, {
-        note: "I'd like to connect and discuss academics/career.",
+      await api.post("/mentorship/request", {
+        alumniId: id,
+        message: requestMessage.trim(),
       });
-      setBanner("Chat request sent.");
-      await loadChatRequestStatus();
+      setBanner("Mentorship request sent. Alumni can review it in their dashboard.");
     } catch (err) {
-      setBanner(getErrorMessage(err, "Could not send chat request"));
-    } finally {
-      setRequestLoading(false);
-    }
-  };
-
-  const respondIncoming = async (action) => {
-    if (!chatRequestId) return;
-    try {
-      setRequestLoading(true);
-      setBanner("");
-      await api.post(`/chat/request/${chatRequestId}/respond`, { action });
-      setBanner(action === "accepted" ? "Chat request accepted." : "Chat request rejected.");
-      await loadChatRequestStatus();
-      if (action === "accepted") {
-        openChatWithTarget();
-      }
-    } catch (err) {
-      setBanner(getErrorMessage(err, "Failed to update request"));
-    } finally {
-      setRequestLoading(false);
-    }
-  };
-
-  const cancelOutgoing = async () => {
-    if (!chatRequestId) return;
-    try {
-      setRequestLoading(true);
-      setBanner("");
-      await api.post(`/chat/request/${chatRequestId}/cancel`);
-      setBanner("Chat request cancelled.");
-      await loadChatRequestStatus();
-    } catch (err) {
-      setBanner(getErrorMessage(err, "Failed to cancel request"));
-    } finally {
-      setRequestLoading(false);
-    }
-  };
-
-  const removeRequestRecord = async () => {
-    if (!chatRequestId) return;
-    try {
-      setRequestLoading(true);
-      setBanner("");
-      await api.delete(`/chat/request/${chatRequestId}`);
-      setBanner("Request removed.");
-      await loadChatRequestStatus();
-    } catch (err) {
-      setBanner(getErrorMessage(err, "Failed to remove request"));
+      setBanner(getErrorMessage(err, "Could not send mentorship request"));
     } finally {
       setRequestLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 py-6 px-4">
+    <div className="min-h-screen bg-slate-100 py-4 sm:py-6 px-2 sm:px-4">
       <div className="max-w-5xl mx-auto">
         <button
           onClick={() => navigate(-1)}
@@ -176,7 +115,7 @@ export default function PublicProfileVisitPage() {
         {!loading && error && <p className="text-sm text-red-600">{error}</p>}
 
         {!loading && !error && payload.user && (
-          <div className="grid lg:grid-cols-[320px,1fr] gap-4">
+          <div className="grid lg:grid-cols-[320px,1fr] gap-3 sm:gap-4">
             <aside className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm h-fit">
               <img
                 src={avatar}
@@ -191,7 +130,7 @@ export default function PublicProfileVisitPage() {
               <p className="text-xs text-slate-500 text-center mt-1">{payload.user.prn || payload.user.email}</p>
 
               <div className="mt-4 space-y-2">
-                {!isSelf && !canUseRequestFlow && (
+                {allowPrivateChat && (
                   <button
                     onClick={openChatWithTarget}
                     className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm"
@@ -200,80 +139,34 @@ export default function PublicProfileVisitPage() {
                   </button>
                 )}
 
-                {isStudentToAlumniRequestFlow && ["none", "rejected", "cancelled"].includes(chatRequestStatus) && (
-                  <button
-                    onClick={sendChatRequest}
-                    disabled={requestLoading}
-                    className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm disabled:bg-blue-300"
-                  >
-                    <FiMessageSquare size={14} /> {requestLoading ? "Sending..." : "Request Alumni Chat"}
-                  </button>
-                )}
-                {canUseRequestFlow && chatRequestStatus === "pending_outgoing" && (
-                  <div className="space-y-2">
-                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-                      {isStudentToAlumniRequestFlow
-                        ? "Request pending. Wait for acceptance."
-                        : "A request is already pending for this user."}
+                {isStudentToAlumniFlow && (
+                  <div className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+                    <p className="text-xs text-blue-900 font-medium">
+                      Send mentorship request (this appears on Alumni Dashboard).
                     </p>
-                    {isStudentToAlumniRequestFlow && (
-                      <button
-                        onClick={cancelOutgoing}
-                        disabled={requestLoading}
-                        className="w-full text-xs px-2 py-2 rounded border border-amber-300 text-amber-700"
-                      >
-                        Cancel Request
-                      </button>
-                    )}
+                    <textarea
+                      rows={3}
+                      value={requestMessage}
+                      onChange={(e) => setRequestMessage(e.target.value)}
+                      className="w-full rounded border border-blue-200 px-2 py-1.5 text-sm"
+                      placeholder="Write why you are requesting mentorship..."
+                    />
+                    <button
+                      onClick={sendMentorshipRequest}
+                      disabled={requestLoading}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded bg-blue-600 px-3 py-2 text-sm text-white disabled:bg-blue-300"
+                    >
+                      <FiSend size={14} /> {requestLoading ? "Sending..." : "Request Mentorship"}
+                    </button>
                   </div>
                 )}
-                {canUseRequestFlow && chatRequestStatus === "pending_incoming" && (
-                  <div className="space-y-2">
-                    <p className="text-xs text-slate-600">
-                      {isAlumniToStudentRequestFlow
-                        ? "This student requested a private chat with you."
-                        : "This user requested to message you."}
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => respondIncoming("accepted")}
-                        disabled={requestLoading}
-                        className="flex-1 text-xs px-2 py-2 rounded bg-emerald-600 text-white"
-                      >
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => respondIncoming("rejected")}
-                        disabled={requestLoading}
-                        className="flex-1 text-xs px-2 py-2 rounded border border-red-300 text-red-600"
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {canUseRequestFlow && chatRequestStatus === "accepted" && (
-                  <button
-                    onClick={openChatWithTarget}
-                    className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm"
-                  >
-                    <FiMessageSquare size={14} /> Open Chat
-                  </button>
-                )}
-                {isStudentToAlumniRequestFlow && ["rejected", "cancelled"].includes(chatRequestStatus) && (
-                  <button
-                    onClick={removeRequestRecord}
-                    disabled={requestLoading}
-                    className="w-full text-xs px-2 py-2 rounded border border-slate-300 text-slate-700"
-                  >
-                    Remove Old Request
-                  </button>
-                )}
-                {isAlumniToStudentRequestFlow && ["none", "rejected", "cancelled"].includes(chatRequestStatus) && (
-                  <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded p-2">
-                    Student can request private chat from this profile. You can accept it from here or from chat requests.
+
+                {isAlumniToStudentFlow && (
+                  <p className="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded p-2">
+                    Student-alumni requests are managed through mentorship dashboard flow.
                   </p>
                 )}
+
                 {banner && (
                   <p className="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded p-2">{banner}</p>
                 )}

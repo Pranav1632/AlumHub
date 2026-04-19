@@ -62,15 +62,29 @@ export default function StudentDashboard() {
   const latestRequests = useMemo(() => requests.slice(0, 3), [requests]);
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-2">
-      <h1 className="text-3xl font-bold text-slate-900">Student Dashboard</h1>
-      <p className="text-slate-500 mt-1">Welcome {user?.name} | College: {user?.collegeId}</p>
+    <div className="max-w-6xl mx-auto py-6 sm:py-8 px-2">
+      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Student Dashboard</h1>
+      <p className="text-slate-500 mt-1 text-sm sm:text-base break-words">Welcome {user?.name} | College: {user?.collegeId}</p>
       {profileCompletion && !profileCompletion.isComplete && (
         <div className="mt-3 inline-flex w-full items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
           <FiAlertTriangle className="mt-0.5 shrink-0" size={15} />
           <span>
             Profile {profileCompletion.completionPercent || 0}% complete. Missing: {(profileCompletion.missingFields || []).slice(0, 5).join(", ")}
           </span>
+        </div>
+      )}
+      {profileCompletion && (
+        <div className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <p className="font-medium text-slate-800">Profile Completion</p>
+            <p className="text-slate-600">{profileCompletion.completionPercent || 0}%</p>
+          </div>
+          <div className="mt-2 h-2 w-full rounded-full bg-slate-100">
+            <div
+              className={`h-full rounded-full ${profileCompletion.isComplete ? "bg-emerald-500" : "bg-amber-500"}`}
+              style={{ width: `${profileCompletion.completionPercent || 0}%` }}
+            />
+          </div>
         </div>
       )}
 
@@ -89,7 +103,7 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4 mt-6">
+      <div className="grid md:grid-cols-2 gap-3 sm:gap-4 mt-6">
         <Link to="/alumni-directory" className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl p-4 flex items-center justify-between">
           <span className="font-medium">Explore Alumni & Request Mentorship</span>
           <FiUsers size={18} />

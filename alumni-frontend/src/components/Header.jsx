@@ -101,24 +101,34 @@ function Header() {
       return;
     }
 
+    let cancelled = false;
+
     const timer = setTimeout(async () => {
       try {
         setSearchLoading(true);
-        const res = await api.get(`/user/global-search?q=${encodeURIComponent(query)}&limit=6`);
+        const res = await api.get("/user/global-search", {
+          params: { q: query, limit: 8 },
+        });
+        if (cancelled) return;
         setSearchResults({
           users: res.data?.users || [],
           chats: res.data?.chats || [],
         });
         setSearchError("");
       } catch (err) {
+        if (cancelled) return;
         setSearchResults({ users: [], chats: [] });
         setSearchError(getErrorMessage(err, "Could not fetch search results"));
       } finally {
+        if (cancelled) return;
         setSearchLoading(false);
       }
     }, 220);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [globalQuery, user]);
 
   useEffect(() => {
@@ -160,7 +170,11 @@ function Header() {
     if (!target?._id) return;
 
     const targetRole = normalizeRole(target.role);
-    if (source === "user" && user?.role === "student" && targetRole === "alumni") {
+    const isStudentAlumniPair =
+      (user?.role === "student" && targetRole === "alumni") ||
+      (user?.role === "alumni" && targetRole === "student");
+
+    if (source === "user" && isStudentAlumniPair) {
       navigate(`/profile/visit/${target._id}`);
       clearSearch();
       return;
@@ -214,7 +228,10 @@ function Header() {
                     onClick={() => openChatResult(item, "user")}
                     className="rounded-md border border-emerald-300 px-2 py-1 text-[11px] text-emerald-700 hover:bg-emerald-50"
                   >
-                    Chat
+                    {((user?.role === "student" && normalizeRole(item.role) === "alumni") ||
+                      (user?.role === "alumni" && normalizeRole(item.role) === "student"))
+                      ? "Profile"
+                      : "Chat"}
                   </button>
                 </div>
               ))}
@@ -258,7 +275,7 @@ function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/85">
-      <div className="mx-auto flex h-[84px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-[78px] sm:h-[84px] max-w-7xl items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35 }}>
           <NavLink to="/" className="group flex min-w-0 items-center gap-3">
             <div className="relative">
@@ -270,8 +287,8 @@ function Header() {
               <div className="pointer-events-none absolute -bottom-1 -right-1 h-3 w-3 rounded-full border border-white bg-emerald-500" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-2xl font-black tracking-tight text-slate-900 md:text-[2rem]">AlumHub</p>
-              <p className="truncate text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+              <p className="truncate text-xl sm:text-2xl font-black tracking-tight text-slate-900 md:text-[2rem]">AlumHub</p>
+              <p className="truncate text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.13em] sm:tracking-[0.15em] text-slate-500">
                 Alumni Network Platform
               </p>
             </div>
@@ -292,6 +309,11 @@ function Header() {
               onChange={(e) => {
                 setGlobalQuery(e.target.value);
                 setSearchOpen(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && searchResults.users?.[0]?._id) {
+                  openProfileResult(searchResults.users[0]._id);
+                }
               }}
               onFocus={() => setSearchOpen(true)}
               placeholder="Search people or messages"
@@ -456,6 +478,11 @@ function Header() {
               onChange={(e) => {
                 setGlobalQuery(e.target.value);
                 setSearchOpen(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && searchResults.users?.[0]?._id) {
+                  openProfileResult(searchResults.users[0]._id);
+                }
               }}
               onFocus={() => setSearchOpen(true)}
               placeholder="Search people or messages"

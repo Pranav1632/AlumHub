@@ -96,9 +96,9 @@ export default function Login() {
   const showAdminField = form.portal === "admin";
 
   return (
-    <div className="min-h-[76vh] flex items-center justify-center px-4">
-      <div className="w-full max-w-5xl grid lg:grid-cols-[1.1fr,0.9fr] gap-5">
-        <section className="bg-white border border-slate-200 rounded-2xl shadow-lg p-6 md:p-8">
+    <div className="min-h-[72vh] flex items-center justify-center px-2 sm:px-4 py-2">
+      <div className="w-full max-w-5xl grid lg:grid-cols-[1.1fr,0.9fr] gap-3 sm:gap-5">
+        <section className="bg-white border border-slate-200 rounded-2xl shadow-lg p-4 sm:p-6 md:p-8">
           <h1 className="text-2xl font-bold text-slate-900 mb-2 inline-flex items-center gap-2">
             <FiKey size={22} /> AlumHub Login
           </h1>
@@ -182,12 +182,12 @@ export default function Login() {
           </form>
         </section>
 
-        <aside className="bg-slate-900 text-white rounded-2xl shadow-lg p-6 md:p-7">
+        <aside className="bg-slate-900 text-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-7">
           <h2 className="text-lg font-semibold mb-4 inline-flex items-center gap-2">
             <FiUserCheck size={18} /> Admin Demo Credentials (JSON)
           </h2>
 
-          <div className="space-y-4 max-h-[520px] overflow-y-auto pr-1">
+          <div className="space-y-3 sm:space-y-4 max-h-[260px] sm:max-h-[520px] overflow-y-auto pr-1">
             <div>
               <p className="text-xs uppercase tracking-wide text-slate-300 mb-2">Admins</p>
               <div className="space-y-2">

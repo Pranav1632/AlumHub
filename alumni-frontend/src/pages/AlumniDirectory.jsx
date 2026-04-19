@@ -37,6 +37,78 @@ const CATEGORY_META = {
   },
 };
 
+const SAMPLE_ALUMNI_DATA = [
+  {
+    _id: "sample-alumni-1",
+    role: "alumni",
+    name: "Riya Kulkarni",
+    email: "riya.kulkarni.sample@alumhub.test",
+    prn: "A21CS1001",
+    lastLoginAt: new Date().toISOString(),
+    createdAt: "2025-02-10T09:00:00.000Z",
+    profile: {
+      branch: "Computer Engineering",
+      graduationYear: "2024",
+      currentCompany: "Google",
+      jobTitle: "Software Engineer",
+      location: "Bengaluru",
+      headline: "Backend engineer focused on scalable systems",
+      bio: "Helping students with interview prep and backend projects.",
+      skills: ["Node.js", "System Design", "MongoDB", "AWS"],
+      interests: ["Mentorship", "Open Source", "Career Guidance"],
+      linkedIn: "https://www.linkedin.com",
+      github: "https://github.com",
+      portfolio: "https://example.com",
+    },
+  },
+  {
+    _id: "sample-alumni-2",
+    role: "alumni",
+    name: "Sahil Deshmukh",
+    email: "sahil.deshmukh.sample@alumhub.test",
+    prn: "A20IT1044",
+    lastLoginAt: "2026-04-16T08:30:00.000Z",
+    createdAt: "2024-11-15T09:00:00.000Z",
+    profile: {
+      branch: "Information Technology",
+      graduationYear: "2023",
+      currentCompany: "TCS",
+      jobTitle: "Cloud Engineer",
+      location: "Pune",
+      headline: "Cloud and DevOps mentor for final-year students",
+      bio: "I guide students on placement readiness and cloud fundamentals.",
+      skills: ["Azure", "CI/CD", "Docker", "Linux"],
+      interests: ["DevOps", "Hackathons", "Campus Talks"],
+      linkedIn: "https://www.linkedin.com",
+      github: "https://github.com",
+      portfolio: "https://example.com",
+    },
+  },
+  {
+    _id: "sample-alumni-3",
+    role: "alumni",
+    name: "Neha Patil",
+    email: "neha.patil.sample@alumhub.test",
+    prn: "A19CS1112",
+    lastLoginAt: "2026-04-13T13:10:00.000Z",
+    createdAt: "2024-06-07T09:00:00.000Z",
+    profile: {
+      branch: "Computer Engineering",
+      graduationYear: "2022",
+      currentCompany: "Infosys",
+      jobTitle: "Data Analyst",
+      location: "Hyderabad",
+      headline: "Data mentor for analytics and BI roadmaps",
+      bio: "Supporting juniors in analytics projects and interview preparation.",
+      skills: ["SQL", "Power BI", "Python", "Statistics"],
+      interests: ["Data Storytelling", "Career Coaching"],
+      linkedIn: "https://www.linkedin.com",
+      github: "https://github.com",
+      portfolio: "https://example.com",
+    },
+  },
+];
+
 const toYear = (value) => {
   const year = Number.parseInt(String(value || "").trim(), 10);
   if (Number.isNaN(year)) return null;
@@ -100,9 +172,19 @@ export default function AlumniDirectory() {
     const load = async () => {
       try {
         const res = await api.get("/alumni/verified");
-        setAlumni(res.data?.alumni || []);
+        const liveAlumni = (res.data?.alumni || []).map((item) => ({ ...item, isSample: false }));
+        const identity = (item) =>
+          `${String(item?.email || "").trim().toLowerCase()}|${String(item?.prn || "").trim().toUpperCase()}`;
+        const existingIdentities = new Set(liveAlumni.map(identity));
+
+        const sampleAppend = SAMPLE_ALUMNI_DATA.filter((item) => !existingIdentities.has(identity(item))).map(
+          (item) => ({ ...item, isSample: true })
+        );
+
+        setAlumni([...liveAlumni, ...sampleAppend]);
       } catch (err) {
-        setError(err.response?.data?.msg || "Failed to load alumni list");
+        setError(err.response?.data?.msg || "Failed to load alumni list. Showing sample data.");
+        setAlumni(SAMPLE_ALUMNI_DATA.map((item) => ({ ...item, isSample: true })));
       }
     };
     load();
@@ -175,6 +257,10 @@ export default function AlumniDirectory() {
   }, [categorizedAlumni, search, activeCategory]);
 
   const sendMentorshipRequest = async () => {
+    if (selected?.isSample) {
+      setFeedback({ type: "error", text: "This is sample alumni data for UI demo. Select a real alumni profile to send request." });
+      return;
+    }
     if (!selected?._id || !requestMessage.trim()) {
       setFeedback({ type: "error", text: "Please choose alumni and enter message." });
       return;
@@ -202,17 +288,19 @@ export default function AlumniDirectory() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4 grid lg:grid-cols-[1fr,340px] gap-4">
+    <div className="max-w-7xl mx-auto p-3 sm:p-4 grid lg:grid-cols-[1fr,340px] gap-4">
       <section className="bg-white border rounded-xl p-4">
         <div className="flex flex-wrap justify-between items-center mb-3 gap-2">
           <div>
             <h2 className="text-xl font-semibold">Alumni Directory</h2>
-            <p className="text-sm text-slate-500">Admin-friendly categories with color tags for quick discovery.</p>
+            <p className="text-sm text-slate-500">
+              Admin-friendly categories with color tags for quick discovery. Live data is blended with sample mentors.
+            </p>
           </div>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border rounded px-3 py-2 text-sm min-w-[230px]"
+            className="border rounded px-3 py-2 text-sm w-full sm:w-auto min-w-0 sm:min-w-[230px]"
             placeholder="Search by name / PRN / skill / company"
           />
         </div>
@@ -237,7 +325,7 @@ export default function AlumniDirectory() {
           })}
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
+        <div className="hidden md:block overflow-x-auto rounded-lg border border-slate-200">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left border-b bg-slate-50">
@@ -258,7 +346,16 @@ export default function AlumniDirectory() {
                     className="border-b hover:bg-slate-50 cursor-pointer"
                     onClick={() => setSelected(a)}
                   >
-                    <td className="py-2 px-2 font-medium">{a.name}</td>
+                    <td className="py-2 px-2 font-medium">
+                      <div className="flex items-center gap-2">
+                        <span>{a.name}</span>
+                        {a.isSample && (
+                          <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-700">
+                            Sample
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-2 px-2">{a.prn || "-"}</td>
                     <td className="py-2 px-2">{a.email}</td>
                     <td className="py-2 px-2">{profile.graduationYear || "-"}</td>
@@ -274,6 +371,39 @@ export default function AlumniDirectory() {
           </table>
           {filtered.length === 0 && <p className="text-slate-500 text-sm p-3">No alumni found for this category/search.</p>}
         </div>
+
+        <div className="md:hidden space-y-2">
+          {filtered.map((a) => {
+            const profile = a.profile || {};
+            const categoryMeta = CATEGORY_META[a.categoryKey] || CATEGORY_META.others;
+            const isActive = String(selected?._id) === String(a._id);
+
+            return (
+              <button
+                key={`mobile-${a._id}`}
+                onClick={() => setSelected(a)}
+                className={`w-full rounded-xl border p-3 text-left transition ${
+                  isActive ? "border-blue-300 bg-blue-50/40" : "border-slate-200 bg-white"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold text-slate-900 truncate">{a.name}</p>
+                  <span className={`inline-flex border rounded-full px-2 py-0.5 text-[10px] ${categoryMeta.badgeClass}`}>
+                    {categoryMeta.label}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-1">{a.prn || "-"} | {profile.graduationYear || "-"}</p>
+                <p className="text-xs text-slate-500 truncate">{a.email}</p>
+                {a.isSample && (
+                  <span className="mt-2 inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-700">
+                    Sample
+                  </span>
+                )}
+              </button>
+            );
+          })}
+          {filtered.length === 0 && <p className="text-slate-500 text-sm p-1">No alumni found for this category/search.</p>}
+        </div>
       </section>
 
       <aside className="bg-white border rounded-xl p-4 space-y-3">
@@ -282,6 +412,11 @@ export default function AlumniDirectory() {
         {selected && (
           <div className="space-y-2 text-sm">
             <p><span className="font-medium">Name:</span> {selected.name}</p>
+            {selected.isSample && (
+              <p className="text-xs text-violet-700 bg-violet-50 border border-violet-200 rounded px-2 py-1">
+                Demo sample profile (for UI preview)
+              </p>
+            )}
             <p><span className="font-medium">PRN:</span> {selected.prn || "-"}</p>
             <p><span className="font-medium">Email:</span> {selected.email}</p>
             <p><span className="font-medium">Branch:</span> {selected.profile?.branch || "-"}</p>
@@ -293,6 +428,13 @@ export default function AlumniDirectory() {
             <button
               onClick={() => {
                 if (isStudent) {
+                  if (selected.isSample) {
+                    setFeedback({
+                      type: "error",
+                      text: "Sample profiles are for demo only. Please choose a real alumni profile.",
+                    });
+                    return;
+                  }
                   navigate(`/profile/visit/${selected._id}`);
                   return;
                 }
@@ -313,7 +455,7 @@ export default function AlumniDirectory() {
                   : "border-emerald-300 text-emerald-700 hover:bg-emerald-50"
               }`}
             >
-              {isStudent ? "View Profile / Request Chat" : "Private Chat"}
+              {isStudent ? "View Profile / Request Mentorship" : "Private Chat"}
             </button>
           </div>
         )}

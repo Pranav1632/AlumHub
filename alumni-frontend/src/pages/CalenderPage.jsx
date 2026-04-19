@@ -64,17 +64,17 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-6">
+    <div className="min-h-screen bg-slate-100 p-3 sm:p-6">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-slate-800 mb-4">College Events Calendar</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-3 sm:mb-4">College Events Calendar</h1>
 
-        <div className="w-full bg-white rounded-2xl p-6 mb-6 border shadow-sm">
+        <div className="w-full bg-white rounded-2xl p-3 sm:p-6 mb-4 sm:mb-6 border shadow-sm">
           <div className="mx-auto max-w-5xl">
             <Calendar
               onChange={setDate}
               value={date}
               className="w-full border-0"
-              tileClassName={({ view }) => (view === "month" ? "h-20 p-1 text-sm" : "")}
+              tileClassName={({ view }) => (view === "month" ? "h-14 sm:h-20 p-1 text-[11px] sm:text-sm" : "")}
               tileContent={({ date: d, view }) => {
                 if (view !== "month") return null;
                 const dayEvents = eventsByDay.get(d.toDateString()) || [];
@@ -87,7 +87,7 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <div className="w-full bg-white rounded-2xl border p-5 shadow-sm">
+        <div className="w-full bg-white rounded-2xl border p-4 sm:p-5 shadow-sm">
           <h2 className="text-xl font-semibold mb-3">All Events (Latest First)</h2>
           <input
             value={search}

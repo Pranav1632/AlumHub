@@ -7,6 +7,7 @@ import {
   FiChevronRight,
   FiMessageSquare,
   FiRefreshCw,
+  FiSend,
   FiUsers,
 } from "react-icons/fi";
 import api from "../utils/axiosInstance";
@@ -53,7 +54,7 @@ export default function ChatPage() {
   const meId = user?.id || user?._id;
   const isStudent = user?.role === "student";
   const isAlumni = user?.role === "alumni";
-  const canManageChatRequests = isStudent || isAlumni;
+  const canManageChatRequests = false;
 
   const [contacts, setContacts] = useState([]);
   const [activeContactId, setActiveContactId] = useState("");
@@ -659,7 +660,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-4 pb-2">
+    <div className="max-w-7xl mx-auto px-1.5 sm:px-4 pb-2">
       <div className="md:hidden mb-2 flex items-center gap-2">
         <button
           onClick={() => setMobilePanel("contacts")}
@@ -679,7 +680,7 @@ export default function ChatPage() {
         </button>
       </div>
 
-      <div className="h-[calc(100dvh-148px)] min-h-[500px] md:h-[calc(100dvh-190px)] md:min-h-[540px] rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden md:grid md:grid-cols-[340px,1fr]">
+      <div className="h-[calc(100dvh-170px)] min-h-[420px] sm:h-[calc(100dvh-160px)] sm:min-h-[460px] md:h-[calc(100dvh-190px)] md:min-h-[540px] rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden md:grid md:grid-cols-[340px,1fr]">
         <aside className={`${mobilePanel === "chat" ? "hidden" : "flex"} md:flex flex-col bg-slate-50 border-r border-slate-200`}>
           <div className="p-4 border-b border-slate-200 bg-white">
             <div className="flex items-center justify-between mb-3">
@@ -895,7 +896,7 @@ export default function ChatPage() {
 
           {activeContact && (
             <>
-              <header className="border-b border-slate-200 p-3 sm:p-4 flex items-center justify-between bg-white">
+              <header className="border-b border-slate-200 p-2.5 sm:p-4 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3 min-w-0">
                   <button
                     onClick={showContactsPanel}
@@ -965,7 +966,7 @@ export default function ChatPage() {
                     return (
                       <div key={normalizeId(msg._id) || msg.clientId} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                         <div
-                          className={`max-w-[82%] sm:max-w-[75%] rounded-2xl px-3 py-2 shadow-sm ${
+                          className={`max-w-[90%] sm:max-w-[78%] rounded-2xl px-3 py-2 shadow-sm ${
                             mine
                               ? "bg-blue-600 text-white rounded-br-sm"
                               : "bg-white border border-slate-200 text-slate-800 rounded-bl-sm"
@@ -986,29 +987,36 @@ export default function ChatPage() {
                 <div ref={messagesEndRef} />
               </div>
 
-              <footer className="border-t border-slate-200 p-3 bg-white">
-                <div className="flex items-end gap-2">
-                  <textarea
-                    rows={2}
-                    value={input}
-                    onChange={(e) => onTypingChange(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        onSend();
-                      }
-                    }}
-                    placeholder="Type a message..."
-                    className="flex-1 resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={onSend}
-                    className="h-10 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300"
-                    disabled={!input.trim()}
-                  >
-                    Send
-                  </button>
+              <footer className="border-t border-slate-200 p-2 sm:p-3 bg-white">
+                <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-3 py-2 shadow-sm">
+                  <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Enter to send | Shift + Enter for new line</span>
+                    <span>{input.trim().length}/2000</span>
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <textarea
+                      rows={2}
+                      maxLength={2000}
+                      value={input}
+                      onChange={(e) => onTypingChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          onSend();
+                        }
+                      }}
+                      placeholder={`Message ${activeContact.user?.name || "user"}...`}
+                      className="flex-1 resize-none rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={onSend}
+                      className="h-11 px-4 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:bg-blue-300 inline-flex items-center gap-2"
+                      disabled={!input.trim()}
+                    >
+                      <FiSend size={14} /> Send
+                    </button>
+                  </div>
                 </div>
               </footer>
             </>

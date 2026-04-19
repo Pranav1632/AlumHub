@@ -242,7 +242,7 @@ export default function Home() {
   return (
     <div className="-mx-2 -my-3 min-h-screen bg-[radial-gradient(circle_at_top,_#f8fafc_0%,_#f1f5f9_42%,_#eef2f7_100%)] text-slate-900 sm:-mx-4 md:-mx-6">
       <motion.div
-        className="pointer-events-none fixed left-0 right-0 top-[84px] z-40 h-[3px] origin-left bg-gradient-to-r from-slate-800 via-slate-600 to-sky-600/80"
+          className="pointer-events-none fixed left-0 right-0 top-[78px] sm:top-[84px] z-40 h-[3px] origin-left bg-gradient-to-r from-slate-800 via-slate-600 to-sky-600/80"
         style={{ scaleX: progressScale }}
       />
 

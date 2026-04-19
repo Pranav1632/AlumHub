@@ -204,8 +204,8 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-6">
-      <div className="w-full max-w-4xl bg-white border border-slate-200 shadow-lg rounded-2xl p-6 md:p-8">
+    <div className="min-h-[80vh] flex items-center justify-center px-2 sm:px-4 py-4 sm:py-6">
+      <div className="w-full max-w-4xl bg-white border border-slate-200 shadow-lg rounded-2xl p-4 sm:p-6 md:p-8">
         <h2 className="text-2xl font-bold text-slate-900 mb-2 inline-flex items-center gap-2">
           <FiUserPlus size={22} /> Student/Alumni Signup
         </h2>

@@ -47,8 +47,8 @@ export default function Feedback() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 py-8 px-4">
-      <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+    <div className="min-h-screen bg-slate-100 py-5 sm:py-8 px-2 sm:px-4">
+      <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6">
         <h1 className="text-2xl font-bold text-slate-900">Feedback and Complaint Form</h1>
         <p className="text-sm text-slate-500 mt-1">
           Submit feedback, complaints, suggestions, or bug reports directly to the admin office.

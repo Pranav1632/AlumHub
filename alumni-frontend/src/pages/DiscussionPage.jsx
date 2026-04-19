@@ -177,9 +177,11 @@ export default function DiscussionPage() {
     const tagStyle = TAG_STYLE[postTag];
     const cardToneClass = tagStyle?.surface || (isAdminPost ? "bg-sky-50/80 border-sky-200" : "bg-white border-slate-200");
     const isStudentToAlumni = user?.role === "student" && postRole === "alumni";
+    const isAlumniToStudent = user?.role === "alumni" && postRole === "student";
+    const useVisitProfileFlow = isStudentToAlumni || isAlumniToStudent;
 
     return (
-      <div key={postId} className={`rounded-xl border p-4 transition-all duration-200 hover:shadow-sm ${cardToneClass} ${isReply ? "ml-3 sm:ml-8 mt-2" : ""}`}>
+      <div key={postId} className={`rounded-xl border p-3 sm:p-4 transition-all duration-200 hover:shadow-sm ${cardToneClass} ${isReply ? "ml-2 sm:ml-6 mt-2" : ""}`}>
         <div className="flex items-start gap-3">
           <button
             onClick={() => navigate(`/profile/visit/${normalizeId(post.user?._id)}`)}
@@ -214,7 +216,7 @@ export default function DiscussionPage() {
             </div>
             <p className="text-slate-700 mt-1 whitespace-pre-wrap">{post.content}</p>
 
-            <div className="mt-3 flex items-center gap-3">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <button
                 onClick={() => toggleUpvote(postId)}
                 className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border ${
@@ -245,7 +247,7 @@ export default function DiscussionPage() {
                 !(user?.role === "student" && post.user?.role === "student") && (
                 <button
                   onClick={() => {
-                    if (isStudentToAlumni) {
+                    if (useVisitProfileFlow) {
                       navigate(`/profile/visit/${userId}`);
                       return;
                     }
@@ -262,7 +264,7 @@ export default function DiscussionPage() {
                   }}
                   className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-emerald-300 text-emerald-700 hover:bg-emerald-50"
                 >
-                  <FiMessageSquare size={14} /> {isStudentToAlumni ? "Request Chat" : "Private Chat"}
+                  <FiMessageSquare size={14} /> {useVisitProfileFlow ? "View Profile" : "Private Chat"}
                 </button>
               )}
               {!isReply && replies.length > 0 && (
@@ -282,20 +284,27 @@ export default function DiscussionPage() {
             </div>
 
             {!isReply && replyOpenFor[postId] && (
-              <div className="mt-3 flex items-start gap-2">
-                <textarea
-                  rows={2}
-                  value={replyDrafts[postId] || ""}
-                  onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [postId]: e.target.value }))}
-                  placeholder="Write a reply..."
-                  className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                />
-                <button
-                  onClick={() => createReply(postId)}
-                  className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm"
-                >
-                  Send
-                </button>
+              <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-2">
+                <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Reply to this thread</span>
+                  <span>{(replyDrafts[postId] || "").trim().length}/1200</span>
+                </div>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-2">
+                  <textarea
+                    rows={2}
+                    maxLength={1200}
+                    value={replyDrafts[postId] || ""}
+                    onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [postId]: e.target.value }))}
+                    placeholder="Write a reply..."
+                    className="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white"
+                  />
+                  <button
+                    onClick={() => createReply(postId)}
+                    className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 sm:w-auto"
+                  >
+                    <FiSend size={14} /> Send
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -313,9 +322,9 @@ export default function DiscussionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-slate-50 to-white py-6 px-4 pb-40">
+    <div className="min-h-screen bg-gradient-to-b from-white via-slate-50 to-white py-4 sm:py-6 px-2 sm:px-4 pb-6">
       <div className="max-w-5xl mx-auto">
-        <div className="bg-white border border-slate-200 rounded-xl p-3 mb-4 sticky top-24 z-20">
+        <div className="bg-white border border-slate-200 rounded-xl p-3 mb-3 sm:mb-4 sticky top-[132px] sm:top-24 z-20">
           <div className="relative">
             <FiSearch className="absolute left-3 top-2.5 text-slate-400" size={14} />
             <input
@@ -339,7 +348,7 @@ export default function DiscussionPage() {
         {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
       </div>
 
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[min(1024px,92vw)] z-30">
+      <div className="max-w-5xl mx-auto sticky bottom-2 sm:bottom-4 z-30 mt-3 sm:mt-4" style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}>
         <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-3">
           {isAdmin && (
             <div className="mb-2">
@@ -357,23 +366,28 @@ export default function DiscussionPage() {
               </select>
             </div>
           )}
-          <textarea
-            rows={2}
-            maxLength={3000}
-            value={postText}
-            onChange={(e) => setPostText(e.target.value)}
-            placeholder="Start a discussion with your college community..."
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-          />
-          <div className="mt-2 flex items-center justify-between">
-            <span className="text-xs text-slate-500">{postText.length}/3000</span>
-            <button
-              onClick={createPost}
-              disabled={posting || !postText.trim()}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm disabled:bg-blue-300"
-            >
-              <FiSend size={14} /> {posting ? "Posting..." : "Post"}
-            </button>
+          <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-2.5">
+            <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500">
+              <span className="truncate">Commercial Community Feed Composer</span>
+              <span>{postText.length}/3000</span>
+            </div>
+            <textarea
+              rows={2}
+              maxLength={3000}
+              value={postText}
+              onChange={(e) => setPostText(e.target.value)}
+              placeholder="Start a discussion with your college community..."
+              className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white"
+            />
+            <div className="mt-2 flex items-center justify-end">
+              <button
+                onClick={createPost}
+                disabled={posting || !postText.trim()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:bg-blue-300"
+              >
+                <FiSend size={14} /> {posting ? "Posting..." : "Post Message"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
