@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="3400" viewBox="0 0 2400 3400" role="img" aria-label="AlumHub UX case study style poster wireframe">
+  <defs>
+    <style>
+      .bg { fill: #f5f5f5; }
+      .panel { fill: #ffffff; stroke: #5f5f5f; stroke-width: 4; rx: 20; }
+      .mini { fill: #fbfbfb; stroke: #8a8a8a; stroke-width: 3; rx: 12; }
+      .line { stroke: #7a7a7a; stroke-width: 3; }
+      .thin { stroke: #9a9a9a; stroke-width: 2; }
+      .title { font: 700 84px 'Segoe UI', Arial, sans-serif; fill: #222; letter-spacing: 1px; }
+      .subtitle { font: 400 34px 'Segoe UI', Arial, sans-serif; fill: #555; }
+      .h { font: 700 44px 'Segoe UI', Arial, sans-serif; fill: #2b2b2b; }
+      .t { font: 500 28px 'Segoe UI', Arial, sans-serif; fill: #3c3c3c; }
+      .small { font: 400 24px 'Segoe UI', Arial, sans-serif; fill: #5a5a5a; }
+      .cap { font: 600 22px 'Segoe UI', Arial, sans-serif; fill: #4b4b4b; }
+      .icon { fill: none; stroke: #666; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="2400" height="3400"/>
+
+  <text class="title" x="1200" y="170" text-anchor="middle">AlumHub -Student Alumni Connection</text>
+  <text class="subtitle" x="1200" y="230" text-anchor="middle">Structured Product Design Board • Wireframe Prototype</text>
+  <line class="line" x1="180" y1="280" x2="2220" y2="280"/>
+
+  <!-- Grid dimensions -->
+  <!-- Columns: 180, 770, 1360 -->
+  <!-- Rows: 340, 1290, 2240 -->
+
+  <!-- User Dashboard -->
+  <rect class="panel" x="180" y="340" width="590" height="860"/>
+  <text class="h" x="220" y="410">User Dashboard</text>
+  <text class="small" x="220" y="450">Welcome • Networking • Job Updates</text>
+  <rect class="mini" x="220" y="490" width="510" height="170"/>
+  <circle cx="270" cy="545" r="30" class="icon"/>
+  <line class="thin" x1="320" y1="530" x2="680" y2="530"/>
+  <line class="thin" x1="320" y1="565" x2="630" y2="565"/>
+  <line class="thin" x1="320" y1="600" x2="700" y2="600"/>
+  <rect class="mini" x="220" y="690" width="245" height="220"/>
+  <text class="cap" x="240" y="730">Network Feed</text>
+  <line class="thin" x1="240" y1="760" x2="440" y2="760"/>
+  <line class="thin" x1="240" y1="795" x2="420" y2="795"/>
+  <line class="thin" x1="240" y1="830" x2="430" y2="830"/>
+  <rect class="mini" x="485" y="690" width="245" height="220"/>
+  <text class="cap" x="505" y="730">Quick Jobs</text>
+  <line class="thin" x1="505" y1="760" x2="705" y2="760"/>
+  <line class="thin" x1="505" y1="795" x2="690" y2="795"/>
+  <line class="thin" x1="505" y1="830" x2="700" y2="830"/>
+  <rect class="mini" x="220" y="940" width="510" height="220"/>
+  <text class="cap" x="240" y="985">Activity Timeline</text>
+  <line class="thin" x1="240" y1="1020" x2="690" y2="1020"/>
+  <line class="thin" x1="240" y1="1055" x2="650" y2="1055"/>
+  <line class="thin" x1="240" y1="1090" x2="680" y2="1090"/>
+
+  <!-- Alumni Connect Panel -->
+  <rect class="panel" x="905" y="340" width="590" height="860"/>
+  <text class="h" x="945" y="410">Alumni Connect Panel</text>
+  <text class="small" x="945" y="450">Chat • Mentorship • Profiles</text>
+  <rect class="mini" x="945" y="490" width="235" height="320"/>
+  <text class="cap" x="965" y="530">Mentors List</text>
+  <circle class="icon" cx="985" cy="575" r="16"/>
+  <line class="thin" x1="1015" y1="575" x2="1155" y2="575"/>
+  <circle class="icon" cx="985" cy="625" r="16"/>
+  <line class="thin" x1="1015" y1="625" x2="1155" y2="625"/>
+  <circle class="icon" cx="985" cy="675" r="16"/>
+  <line class="thin" x1="1015" y1="675" x2="1155" y2="675"/>
+  <rect class="mini" x="1200" y="490" width="255" height="320"/>
+  <text class="cap" x="1220" y="530">Chat Window</text>
+  <rect class="mini" x="1220" y="555" width="215" height="50"/>
+  <rect class="mini" x="1240" y="620" width="195" height="50"/>
+  <rect class="mini" x="1220" y="685" width="215" height="50"/>
+  <line class="thin" x1="1220" y1="770" x2="1400" y2="770"/>
+  <rect class="mini" x="945" y="840" width="510" height="320"/>
+  <text class="cap" x="965" y="880">Profile Preview Cards</text>
+  <rect class="mini" x="965" y="910" width="150" height="210"/>
+  <circle class="icon" cx="1040" cy="970" r="34"/>
+  <line class="thin" x1="985" y1="1035" x2="1095" y2="1035"/>
+  <rect class="mini" x="1125" y="910" width="150" height="210"/>
+  <circle class="icon" cx="1200" cy="970" r="34"/>
+  <line class="thin" x1="1145" y1="1035" x2="1255" y2="1035"/>
+  <rect class="mini" x="1285" y="910" width="150" height="210"/>
+  <circle class="icon" cx="1360" cy="970" r="34"/>
+  <line class="thin" x1="1305" y1="1035" x2="1415" y2="1035"/>
+
+  <!-- Events & Meetups Section -->
+  <rect class="panel" x="1630" y="340" width="590" height="860"/>
+  <text class="h" x="1670" y="410">Events &amp; Meetups Section</text>
+  <text class="small" x="1670" y="450">Upcoming Alumni Events</text>
+  <rect class="mini" x="1670" y="490" width="510" height="200"/>
+  <text class="cap" x="1690" y="530">Event Calendar</text>
+  <rect class="mini" x="1690" y="550" width="110" height="110"/>
+  <rect class="mini" x="1820" y="550" width="110" height="110"/>
+  <rect class="mini" x="1950" y="550" width="110" height="110"/>
+  <rect class="mini" x="2070" y="550" width="90" height="110"/>
+  <rect class="mini" x="1670" y="720" width="510" height="440"/>
+  <text class="cap" x="1690" y="760">Upcoming List</text>
+  <circle class="icon" cx="1715" cy="815" r="14"/>
+  <line class="thin" x1="1745" y1="815" x2="2140" y2="815"/>
+  <line class="thin" x1="1745" y1="845" x2="2050" y2="845"/>
+  <circle class="icon" cx="1715" cy="900" r="14"/>
+  <line class="thin" x1="1745" y1="900" x2="2140" y2="900"/>
+  <line class="thin" x1="1745" y1="930" x2="2050" y2="930"/>
+  <circle class="icon" cx="1715" cy="985" r="14"/>
+  <line class="thin" x1="1745" y1="985" x2="2140" y2="985"/>
+  <line class="thin" x1="1745" y1="1015" x2="2050" y2="1015"/>
+  <circle class="icon" cx="1715" cy="1070" r="14"/>
+  <line class="thin" x1="1745" y1="1070" x2="2140" y2="1070"/>
+  <line class="thin" x1="1745" y1="1100" x2="2050" y2="1100"/>
+
+  <!-- Career Opportunities -->
+  <rect class="panel" x="180" y="1290" width="590" height="860"/>
+  <text class="h" x="220" y="1360">Career Opportunities</text>
+  <text class="small" x="220" y="1400">Jobs • Internships • Referrals</text>
+  <rect class="mini" x="220" y="1440" width="510" height="130"/>
+  <rect class="mini" x="250" y="1475" width="220" height="60"/>
+  <rect class="mini" x="490" y="1475" width="210" height="60"/>
+  <rect class="mini" x="220" y="1600" width="510" height="550"/>
+  <text class="cap" x="240" y="1640">Opportunity Feed</text>
+  <rect class="mini" x="240" y="1670" width="470" height="110"/>
+  <line class="thin" x1="265" y1="1710" x2="680" y2="1710"/>
+  <line class="thin" x1="265" y1="1740" x2="650" y2="1740"/>
+  <rect class="mini" x="240" y="1800" width="470" height="110"/>
+  <line class="thin" x1="265" y1="1840" x2="680" y2="1840"/>
+  <line class="thin" x1="265" y1="1870" x2="650" y2="1870"/>
+  <rect class="mini" x="240" y="1930" width="470" height="110"/>
+  <line class="thin" x1="265" y1="1970" x2="680" y2="1970"/>
+  <line class="thin" x1="265" y1="2000" x2="650" y2="2000"/>
+
+  <!-- Community Hub -->
+  <rect class="panel" x="905" y="1290" width="590" height="860"/>
+  <text class="h" x="945" y="1360">Community Hub</text>
+  <text class="small" x="945" y="1400">Posts • Discussions • Experiences</text>
+  <rect class="mini" x="945" y="1440" width="510" height="230"/>
+  <text class="cap" x="965" y="1480">Post Composer</text>
+  <line class="thin" x1="965" y1="1520" x2="1415" y2="1520"/>
+  <line class="thin" x1="965" y1="1555" x2="1380" y2="1555"/>
+  <rect class="mini" x="1260" y="1590" width="175" height="50"/>
+  <rect class="mini" x="945" y="1695" width="510" height="455"/>
+  <text class="cap" x="965" y="1735">Discussion Threads</text>
+  <circle class="icon" cx="985" cy="1790" r="18"/>
+  <line class="thin" x1="1015" y1="1790" x2="1415" y2="1790"/>
+  <line class="thin" x1="1015" y1="1820" x2="1340" y2="1820"/>
+  <circle class="icon" cx="985" cy="1880" r="18"/>
+  <line class="thin" x1="1015" y1="1880" x2="1415" y2="1880"/>
+  <line class="thin" x1="1015" y1="1910" x2="1340" y2="1910"/>
+  <circle class="icon" cx="985" cy="1970" r="18"/>
+  <line class="thin" x1="1015" y1="1970" x2="1415" y2="1970"/>
+  <line class="thin" x1="1015" y1="2000" x2="1340" y2="2000"/>
+
+  <!-- Profile & Login Section -->
+  <rect class="panel" x="1630" y="1290" width="590" height="860"/>
+  <text class="h" x="1670" y="1360">Profile &amp; Login Section</text>
+  <text class="small" x="1670" y="1400">Authentication • Profile Setup</text>
+  <rect class="mini" x="1670" y="1440" width="510" height="300"/>
+  <circle class="icon" cx="1925" cy="1515" r="48"/>
+  <line class="thin" x1="1760" y1="1595" x2="2090" y2="1595"/>
+  <line class="thin" x1="1760" y1="1630" x2="2090" y2="1630"/>
+  <rect class="mini" x="1760" y="1660" width="330" height="50"/>
+  <rect class="mini" x="1670" y="1770" width="245" height="380"/>
+  <text class="cap" x="1690" y="1810">Login</text>
+  <line class="thin" x1="1690" y1="1850" x2="1890" y2="1850"/>
+  <line class="thin" x1="1690" y1="1890" x2="1890" y2="1890"/>
+  <rect class="mini" x="1690" y="1930" width="190" height="55"/>
+  <rect class="mini" x="1935" y="1770" width="245" height="380"/>
+  <text class="cap" x="1955" y="1810">Signup</text>
+  <line class="thin" x1="1955" y1="1850" x2="2155" y2="1850"/>
+  <line class="thin" x1="1955" y1="1890" x2="2155" y2="1890"/>
+  <line class="thin" x1="1955" y1="1930" x2="2155" y2="1930"/>
+  <rect class="mini" x="1955" y="1970" width="190" height="55"/>
+
+  <!-- Bottom description -->
+  <rect class="panel" x="180" y="2240" width="2040" height="780"/>
+  <text class="h" x="220" y="2320">Concept Summary</text>
+  <line class="line" x1="220" y1="2350" x2="2180" y2="2350"/>
+  <text class="t" x="220" y="2420">AlumHub is designed to bridge students and alumni through a focused academic community platform.</text>
+  <text class="t" x="220" y="2480">The dashboard centralizes networking updates, mentorship access, career opportunities, and event discovery</text>
+  <text class="t" x="220" y="2540">in a clean, structured interface. By combining alumni guidance, peer discussions, and referral-driven hiring pathways,</text>
+  <text class="t" x="220" y="2600">the platform supports practical career growth and stronger long-term professional connections.</text>
+
+  <rect class="mini" x="220" y="2670" width="640" height="300"/>
+  <text class="cap" x="250" y="2720">Design Notes</text>
+  <line class="thin" x1="250" y1="2760" x2="820" y2="2760"/>
+  <text class="small" x="250" y="2810">• Wireframe grayscale for UX clarity</text>
+  <text class="small" x="250" y="2860">• Balanced grid and consistent spacing</text>
+  <text class="small" x="250" y="2910">• Section-based product design presentation</text>
+
+  <rect class="mini" x="910" y="2670" width="640" height="300"/>
+  <text class="cap" x="940" y="2720">Audience</text>
+  <line class="thin" x1="940" y1="2760" x2="1510" y2="2760"/>
+  <text class="small" x="940" y="2810">• Students seeking guidance and internships</text>
+  <text class="small" x="940" y="2860">• Alumni offering mentorship and referrals</text>
+  <text class="small" x="940" y="2910">• Campus communities and placement teams</text>
+
+  <rect class="mini" x="1600" y="2670" width="620" height="300"/>
+  <text class="cap" x="1630" y="2720">Poster Format</text>
+  <line class="thin" x1="1630" y1="2760" x2="2190" y2="2760"/>
+  <text class="small" x="1630" y="2810">• High-resolution 2400 × 3400 layout</text>
+  <text class="small" x="1630" y="2860">• Suitable for UX case study presentations</text>
+  <text class="small" x="1630" y="2910">• Editable vector for quick iteration</text>
+</svg>

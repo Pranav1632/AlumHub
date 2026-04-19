@@ -23,7 +23,7 @@ const buildSearchRegex = (value) => {
 };
 
 const profileProjection =
-  "phone branch yearOfStudy graduationYear currentCompany jobTitle location skills interests achievements bio headline profileImage";
+  "phone branch yearOfStudy graduationYear currentCompany jobTitle location skills interests achievements bio headline profileImage resumeLink lastYearFeeReceiptUrl recentFeeReceiptUrl studentIdCardUrl";
 
 const mapProfilesByUser = async ({ collegeId, users }) => {
   const ids = users.map((user) => user._id);

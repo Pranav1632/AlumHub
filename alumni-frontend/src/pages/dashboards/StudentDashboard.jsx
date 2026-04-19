@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { FiCalendar, FiMessageSquare, FiRefreshCw, FiUsers } from "react-icons/fi";
+import { FiAlertTriangle, FiCalendar, FiMessageSquare, FiRefreshCw, FiUsers } from "react-icons/fi";
 import api from "../../utils/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
 
@@ -17,27 +17,31 @@ export default function StudentDashboard() {
   const [alumniCount, setAlumniCount] = useState(0);
   const [requests, setRequests] = useState([]);
   const [summary, setSummary] = useState(null);
+  const [profileCompletion, setProfileCompletion] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = async (showRefreshing = false) => {
     try {
       if (showRefreshing) setRefreshing(true);
-      const [eventsRes, alumniRes, mentorshipRes, summaryRes] = await Promise.all([
+      const [eventsRes, alumniRes, mentorshipRes, summaryRes, meRes] = await Promise.all([
         api.get("/events"),
         api.get("/alumni/verified"),
         api.get("/mentorship/my"),
         api.get("/dashboard/summary"),
+        api.get("/user/me"),
       ]);
 
       setEventsCount(eventsRes.data?.count || 0);
       setAlumniCount(alumniRes.data?.count || 0);
       setRequests(mentorshipRes.data?.requests || []);
       setSummary(summaryRes.data || null);
+      setProfileCompletion(meRes.data?.profileCompletion || null);
     } catch {
       setEventsCount(0);
       setAlumniCount(0);
       setRequests([]);
       setSummary(null);
+      setProfileCompletion(null);
     } finally {
       if (showRefreshing) setRefreshing(false);
     }
@@ -61,6 +65,14 @@ export default function StudentDashboard() {
     <div className="max-w-6xl mx-auto py-8 px-2">
       <h1 className="text-3xl font-bold text-slate-900">Student Dashboard</h1>
       <p className="text-slate-500 mt-1">Welcome {user?.name} | College: {user?.collegeId}</p>
+      {profileCompletion && !profileCompletion.isComplete && (
+        <div className="mt-3 inline-flex w-full items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+          <FiAlertTriangle className="mt-0.5 shrink-0" size={15} />
+          <span>
+            Profile {profileCompletion.completionPercent || 0}% complete. Missing: {(profileCompletion.missingFields || []).slice(0, 5).join(", ")}
+          </span>
+        </div>
+      )}
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">

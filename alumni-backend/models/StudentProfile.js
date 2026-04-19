@@ -20,6 +20,8 @@ const studentProfileSchema = new mongoose.Schema(
     github: String,
     portfolio: String,
     resumeLink: String,
+    recentFeeReceiptUrl: String,
+    studentIdCardUrl: String,
   },
   { timestamps: true }
 );

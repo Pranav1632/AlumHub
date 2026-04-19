@@ -26,6 +26,68 @@ const parseDuplicateKeyMessage = (err) => {
   return "Duplicate value already exists";
 };
 
+const normalizeText = (value) => String(value || "").trim();
+
+const isValidPdfUrl = (value) => {
+  const text = normalizeText(value);
+  if (!text) return false;
+
+  let url;
+  try {
+    url = new URL(text);
+  } catch {
+    return false;
+  }
+
+  if (!["https:", "http:"].includes(url.protocol)) return false;
+
+  const pathname = String(url.pathname || "").toLowerCase();
+  return pathname.endsWith(".pdf");
+};
+
+const getSignupValidationError = ({ role, body }) => {
+  const requiredCommonFields = ["name", "email", "phone", "password", "collegeId", "prn", "branch", "graduationYear", "location"];
+  const missingCommon = requiredCommonFields.filter((field) => !normalizeText(body?.[field]));
+  if (missingCommon.length > 0) {
+    return "Name, email, phone, password, PRN, branch, graduation year, location and collegeId are required";
+  }
+
+  if (role === "student" && !normalizeText(body?.yearOfStudy)) {
+    return "Year Of Study is required for student signup";
+  }
+
+  if (role === "alumni") {
+    if (!normalizeText(body?.currentCompany) || !normalizeText(body?.jobTitle)) {
+      return "Current company and job title are required for alumni signup";
+    }
+  }
+
+  const resumeLink = normalizeText(body?.resumeLink);
+  const lastYearFeeReceiptUrl = normalizeText(body?.lastYearFeeReceiptUrl);
+  const recentFeeReceiptUrl = normalizeText(body?.recentFeeReceiptUrl);
+  const studentIdCardUrl = normalizeText(body?.studentIdCardUrl);
+
+  if (role === "alumni") {
+    if (!resumeLink && !lastYearFeeReceiptUrl) {
+      return "For alumni, upload at least one document: Resume PDF or Last Year Fee Receipt PDF";
+    }
+    if ((resumeLink && !isValidPdfUrl(resumeLink)) || (lastYearFeeReceiptUrl && !isValidPdfUrl(lastYearFeeReceiptUrl))) {
+      return "Alumni documents must be valid PDF URLs";
+    }
+  }
+
+  if (role === "student") {
+    if (!recentFeeReceiptUrl && !studentIdCardUrl) {
+      return "For students, upload at least one document: Recent Fee Receipt PDF or Student ID Card PDF";
+    }
+    if ((recentFeeReceiptUrl && !isValidPdfUrl(recentFeeReceiptUrl)) || (studentIdCardUrl && !isValidPdfUrl(studentIdCardUrl))) {
+      return "Student documents must be valid PDF URLs";
+    }
+  }
+
+  return null;
+};
+
 const signToken = (user) =>
   jwt.sign(
     {
@@ -127,34 +189,37 @@ const buildProfileFromSignup = ({ role, collegeId, userId, phone, body }) => {
   const shared = {
     user: userId,
     collegeId,
-    phone: phone || "",
-    branch: String(body?.branch || "").trim(),
-    graduationYear: String(body?.graduationYear || "").trim(),
-    profileImage: String(body?.profileImage || "").trim(),
-    bio: String(body?.bio || "").trim(),
-    headline: String(body?.headline || "").trim(),
-    location: String(body?.location || "").trim(),
-    skills: Array.isArray(body?.skills) ? body.skills : [],
-    interests: Array.isArray(body?.interests) ? body.interests : [],
-    linkedIn: String(body?.linkedIn || "").trim(),
-    github: String(body?.github || "").trim(),
-    portfolio: String(body?.portfolio || "").trim(),
-    resumeLink: String(body?.resumeLink || "").trim(),
+    phone: normalizeText(phone),
+    branch: normalizeText(body?.branch),
+    graduationYear: normalizeText(body?.graduationYear),
+    profileImage: "",
+    bio: "",
+    headline: "",
+    location: normalizeText(body?.location),
+    skills: [],
+    interests: [],
+    linkedIn: "",
+    github: "",
+    portfolio: "",
+    resumeLink: normalizeText(body?.resumeLink),
   };
 
   if (role === "student") {
     return {
       ...shared,
-      yearOfStudy: String(body?.yearOfStudy || "").trim(),
-      interests: Array.isArray(body?.interests) ? body.interests : [],
+      yearOfStudy: normalizeText(body?.yearOfStudy),
+      achievements: [],
+      recentFeeReceiptUrl: normalizeText(body?.recentFeeReceiptUrl),
+      studentIdCardUrl: normalizeText(body?.studentIdCardUrl),
     };
   }
 
   return {
     ...shared,
-    currentCompany: String(body?.currentCompany || "").trim(),
-    jobTitle: String(body?.jobTitle || "").trim(),
-    achievements: Array.isArray(body?.achievements) ? body.achievements : [],
+    currentCompany: normalizeText(body?.currentCompany),
+    jobTitle: normalizeText(body?.jobTitle),
+    achievements: [],
+    lastYearFeeReceiptUrl: normalizeText(body?.lastYearFeeReceiptUrl),
   };
 };
 
@@ -236,9 +301,7 @@ exports.signup = async (req, res) => {
     } = req.body;
 
     if (!name || !email || !password || !role || !collegeId || !phone) {
-      return res.status(400).json({
-        msg: "Name, email, phone, password, role and collegeId are required",
-      });
+      return res.status(400).json({ msg: "Name, email, phone, password, role and collegeId are required" });
     }
 
     if (confirmPassword && password !== confirmPassword) {
@@ -261,10 +324,15 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ msg: "PRN is required for student/alumni" });
     }
 
-    const normalizedCollegeId = String(collegeId).trim();
-    const normalizedEmail = String(email).trim().toLowerCase();
-    const normalizedPrn = String(prn).trim().toUpperCase();
-    const normalizedPhone = String(phone).trim();
+    const validationError = getSignupValidationError({ role: normalizedRole, body: req.body });
+    if (validationError) {
+      return res.status(400).json({ msg: validationError });
+    }
+
+    const normalizedCollegeId = normalizeText(collegeId);
+    const normalizedEmail = normalizeText(email).toLowerCase();
+    const normalizedPrn = normalizeText(prn).toUpperCase();
+    const normalizedPhone = normalizeText(phone);
 
     const existingEmail = await User.findOne({
       collegeId: normalizedCollegeId,

@@ -87,6 +87,37 @@ npm run dev
 Frontend default URL: `http://localhost:5173`  
 Backend base URL: `http://localhost:5000/api`
 
+## Document Upload Service Setup (Cloudinary)
+
+This project now uses Cloudinary unsigned uploads for:
+- Signup verification PDFs (resume, fee receipt, student ID)
+- Optional profile image upload
+
+### A) Create Cloudinary configuration
+
+1. Create a Cloudinary account and open your dashboard.
+2. Go to **Settings -> Upload -> Upload presets**.
+3. Create an unsigned preset (for example `alumhub_unsigned`).
+4. Restrict this preset to your frontend origins (`http://localhost:5173`).
+5. In the preset, keep resource types enabled for:
+   - `raw` (for PDF files)
+   - `image` (for profile images)
+
+### B) Add frontend environment variables
+
+Create `alumni-frontend/.env` with:
+
+```env
+VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
+VITE_CLOUDINARY_UPLOAD_PRESET=your_unsigned_upload_preset
+```
+
+### C) PDF policy
+
+- Only PDF files are accepted for verification documents.
+- Alumni must upload at least one: Resume PDF or Last Year Fee Receipt PDF.
+- Students must upload at least one: Recent Fee Receipt PDF or Student ID Card PDF.
+
 ## Main API Modules
 
 - `/api/auth` - signup, login, verification, auth me
@@ -124,4 +155,3 @@ Backend base URL: `http://localhost:5000/api`
 ## License
 
 `[[ADD LICENSE HERE]]`
-

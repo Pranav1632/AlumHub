@@ -21,6 +21,7 @@ const alumniProfileSchema = new mongoose.Schema(
     interests: [String],
     achievements: [String],
     resumeLink: String,
+    lastYearFeeReceiptUrl: String,
     willingToMentor: { type: Boolean, default: false },
   },
   { timestamps: true }

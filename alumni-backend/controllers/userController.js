@@ -2,8 +2,103 @@ const User = require("../models/User");
 const StudentProfile = require("../models/StudentProfile");
 const AlumniProfile = require("../models/AlumniProfile");
 const Message = require("../models/Message");
+const { getProfileCompletion } = require("../utils/profileCompletion");
 
 const escapeRegex = (value) => String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const normalizeText = (value) => String(value || "").trim();
+const normalizeList = (value) =>
+  Array.isArray(value)
+    ? value.map((item) => normalizeText(item)).filter(Boolean)
+    : [];
+const hasListValue = (value) => Array.isArray(value) && value.some((item) => normalizeText(item));
+
+const isValidPdfUrl = (value) => {
+  const text = normalizeText(value);
+  if (!text) return false;
+
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(text);
+  } catch {
+    return false;
+  }
+
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) return false;
+  return String(parsedUrl.pathname || "").toLowerCase().endsWith(".pdf");
+};
+
+const getProfileModelByRole = (role) => {
+  if (role === "student") return StudentProfile;
+  if (role === "alumni") return AlumniProfile;
+  return null;
+};
+
+const getCompletionPayload = ({ role, user, profile }) => {
+  if (!["student", "alumni"].includes(role)) {
+    return {
+      role,
+      completionPercent: 100,
+      isComplete: true,
+      missingFields: [],
+    };
+  }
+  return getProfileCompletion({ user, profile });
+};
+
+const getProfileValidationError = ({ role, name, email, phone, body }) => {
+  if (!name || !email || !phone) {
+    return "Name, email and phone are required";
+  }
+
+  const requiredCommon = ["branch", "graduationYear", "headline", "bio", "location", "linkedIn", "github", "portfolio"];
+  const missingCommon = requiredCommon.filter((field) => !normalizeText(body?.[field]));
+  if (missingCommon.length > 0) {
+    return "Complete all required fields: branch, graduation year, headline, bio, location, LinkedIn, GitHub and portfolio";
+  }
+
+  if (!hasListValue(body?.skills) || !hasListValue(body?.interests) || !hasListValue(body?.achievements)) {
+    return "Skills, interests and achievements are required";
+  }
+
+  const resumeLink = normalizeText(body?.resumeLink);
+  const lastYearFeeReceiptUrl = normalizeText(body?.lastYearFeeReceiptUrl);
+  const recentFeeReceiptUrl = normalizeText(body?.recentFeeReceiptUrl);
+  const studentIdCardUrl = normalizeText(body?.studentIdCardUrl);
+
+  if (resumeLink && !isValidPdfUrl(resumeLink)) {
+    return "Resume must be a valid PDF URL";
+  }
+
+  if (role === "student") {
+    if (!normalizeText(body?.yearOfStudy)) {
+      return "Year Of Study is required for student profile";
+    }
+
+    if (!recentFeeReceiptUrl && !studentIdCardUrl) {
+      return "Upload Recent Fee Receipt PDF or Student ID Card PDF";
+    }
+
+    if ((recentFeeReceiptUrl && !isValidPdfUrl(recentFeeReceiptUrl)) || (studentIdCardUrl && !isValidPdfUrl(studentIdCardUrl))) {
+      return "Student verification documents must be valid PDF URLs";
+    }
+  }
+
+  if (role === "alumni") {
+    if (!normalizeText(body?.currentCompany) || !normalizeText(body?.jobTitle)) {
+      return "Current company and job title are required for alumni profile";
+    }
+
+    if (!resumeLink && !lastYearFeeReceiptUrl) {
+      return "Upload Resume PDF or Last Year Fee Receipt PDF";
+    }
+
+    if (lastYearFeeReceiptUrl && !isValidPdfUrl(lastYearFeeReceiptUrl)) {
+      return "Last year fee receipt must be a valid PDF URL";
+    }
+  }
+
+  return null;
+};
 
 const roleWeight = (role) => {
   if (role === "admin" || role === "collegeAdmin" || role === "superAdmin") return 18;
@@ -66,19 +161,16 @@ const scoreChatResult = (item, query, user) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.user.id, collegeId: req.user.collegeId }).select(
-      "-password"
-    );
+    const user = await User.findOne({ _id: req.user.id, collegeId: req.user.collegeId }).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    let profile = null;
-    if (user.role === "student") {
-      profile = await StudentProfile.findOne({ user: req.user.id, collegeId: req.user.collegeId });
-    } else if (user.role === "alumni") {
-      profile = await AlumniProfile.findOne({ user: req.user.id, collegeId: req.user.collegeId });
-    }
+    const Model = getProfileModelByRole(user.role);
+    const profile = Model
+      ? await Model.findOne({ user: req.user.id, collegeId: req.user.collegeId })
+      : null;
+    const profileCompletion = getCompletionPayload({ role: user.role, user, profile });
 
-    return res.json({ user, profile });
+    return res.json({ user, profile, profileCompletion });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server Error" });
@@ -88,9 +180,26 @@ exports.getMe = async (req, res) => {
 exports.updateMe = async (req, res) => {
   try {
     const userId = req.user.id;
-    const nextName = String(req.body?.name || "").trim();
-    const nextEmail = String(req.body?.email || "").trim().toLowerCase();
-    const nextPhone = String(req.body?.phone || "").trim();
+    const nextName = normalizeText(req.body?.name);
+    const nextEmail = normalizeText(req.body?.email).toLowerCase();
+    const nextPhone = normalizeText(req.body?.phone);
+
+    const role = req.user.role;
+    if (["student", "alumni"].includes(role)) {
+      const profileValidationError = getProfileValidationError({
+        role,
+        name: nextName,
+        email: nextEmail,
+        phone: nextPhone,
+        body: req.body,
+      });
+
+      if (profileValidationError) {
+        return res.status(400).json({ message: profileValidationError });
+      }
+    } else if (!nextName || !nextEmail || !nextPhone) {
+      return res.status(400).json({ message: "Name, email and phone are required" });
+    }
 
     const updatedUser = await User.findOneAndUpdate(
       { _id: userId, collegeId: req.user.collegeId },
@@ -101,23 +210,59 @@ exports.updateMe = async (req, res) => {
     if (!updatedUser) return res.status(404).json({ message: "User not found" });
 
     let profile = null;
-    const profilePayload = { ...req.body, collegeId: req.user.collegeId };
+    const profilePayload = {
+      collegeId: req.user.collegeId,
+      phone: nextPhone || req.user.phone || "",
+      branch: normalizeText(req.body?.branch),
+      graduationYear: normalizeText(req.body?.graduationYear),
+      profileImage: normalizeText(req.body?.profileImage),
+      bio: normalizeText(req.body?.bio),
+      headline: normalizeText(req.body?.headline),
+      location: normalizeText(req.body?.location),
+      skills: normalizeList(req.body?.skills),
+      interests: normalizeList(req.body?.interests),
+      achievements: normalizeList(req.body?.achievements),
+      linkedIn: normalizeText(req.body?.linkedIn),
+      github: normalizeText(req.body?.github),
+      portfolio: normalizeText(req.body?.portfolio),
+      resumeLink: normalizeText(req.body?.resumeLink),
+    };
 
     if (updatedUser.role === "student") {
       profile = await StudentProfile.findOneAndUpdate(
         { user: userId, collegeId: req.user.collegeId },
-        { $set: profilePayload },
+        {
+          $set: {
+            ...profilePayload,
+            yearOfStudy: normalizeText(req.body?.yearOfStudy),
+            recentFeeReceiptUrl: normalizeText(req.body?.recentFeeReceiptUrl),
+            studentIdCardUrl: normalizeText(req.body?.studentIdCardUrl),
+          },
+        },
         { new: true, upsert: true }
       );
     } else if (updatedUser.role === "alumni") {
       profile = await AlumniProfile.findOneAndUpdate(
         { user: userId, collegeId: req.user.collegeId },
-        { $set: profilePayload },
+        {
+          $set: {
+            ...profilePayload,
+            currentCompany: normalizeText(req.body?.currentCompany),
+            jobTitle: normalizeText(req.body?.jobTitle),
+            lastYearFeeReceiptUrl: normalizeText(req.body?.lastYearFeeReceiptUrl),
+          },
+        },
         { new: true, upsert: true }
       );
     }
 
-    return res.json({ user: updatedUser, profile });
+    const profileCompletion = getCompletionPayload({
+      role: updatedUser.role,
+      user: updatedUser,
+      profile,
+    });
+
+    return res.json({ user: updatedUser, profile, profileCompletion });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server Error" });

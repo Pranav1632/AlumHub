@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { FiCalendar, FiCheckCircle, FiMessageSquare, FiRefreshCw, FiUser, FiXCircle } from "react-icons/fi";
+import { FiAlertTriangle, FiCalendar, FiCheckCircle, FiMessageSquare, FiRefreshCw, FiUser, FiXCircle } from "react-icons/fi";
 import api from "../../utils/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
 
@@ -83,6 +83,14 @@ export default function AlumniDashboard() {
     <div className="max-w-6xl mx-auto py-8 px-2">
       <h1 className="text-3xl font-bold text-slate-900">Alumni Dashboard</h1>
       <p className="text-slate-500 mt-1">Welcome {user?.name} | College: {user?.collegeId}</p>
+      {me?.profileCompletion && !me.profileCompletion.isComplete && (
+        <div className="mt-3 inline-flex w-full items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+          <FiAlertTriangle className="mt-0.5 shrink-0" size={15} />
+          <span>
+            Profile {me.profileCompletion.completionPercent || 0}% complete. Missing: {(me.profileCompletion.missingFields || []).slice(0, 5).join(", ")}
+          </span>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-4 mt-6">
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
