@@ -90,6 +90,61 @@ const verifyUser = async (req, res) => {
   }
 };
 
+const rejectUser = async (req, res) => {
+  try {
+    const reason = String(req.body?.reason || "").trim();
+    const target = await User.findOne(collegeScopedFilter(req, { _id: req.params.id }));
+
+    if (!target) return res.status(404).json({ msg: "User not found in your college" });
+
+    if (!["student", "alumni"].includes(normalizeRole(target.role))) {
+      return res.status(400).json({ msg: `Cannot reject ${target.role}` });
+    }
+
+    if (target.verified) {
+      return res.status(400).json({ msg: "User is already verified. Use block action instead." });
+    }
+
+    target.blocked = true;
+    target.verified = false;
+    target.adminActionReason = reason || "Registration rejected by admin";
+    await target.save();
+
+    const io = req.app.get("io");
+    await notifyUser({
+      io,
+      collegeId: req.user.collegeId,
+      userId: target._id,
+      type: "admin_action",
+      title: "Registration Rejected",
+      message: "Your registration request was rejected by admin.",
+      meta: {
+        action: "reject_user",
+        adminId: req.user._id,
+        reason: target.adminActionReason,
+      },
+    });
+
+    if (target.email) {
+      try {
+        await sendEmail({
+          to: target.email,
+          subject: "AlumHub Registration Request Rejected",
+          text: `Hello ${target.name || "User"},\n\nYour AlumHub registration request has been rejected by your college admin.\nReason: ${target.adminActionReason}\n\nIf needed, please contact your college administration.\n\nRegards,\nAlumHub Admin`,
+          html: `<p>Hello ${target.name || "User"},</p><p>Your AlumHub registration request has been rejected by your college admin.</p><p><b>Reason:</b> ${target.adminActionReason}</p><p>If needed, please contact your college administration.</p><p>Regards,<br/>AlumHub Admin</p>`,
+        });
+      } catch (mailError) {
+        console.error("Reject user email warning:", mailError.message);
+      }
+    }
+
+    return res.json({ msg: "User rejected successfully", user: target });
+  } catch (err) {
+    console.error("Reject user error:", err);
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+};
+
 const listPendingUsers = async (req, res) => {
   try {
     const { role } = req.query;
@@ -100,6 +155,7 @@ const listPendingUsers = async (req, res) => {
       collegeScopedFilter(req, {
         role: roleFilter,
         verified: false,
+        blocked: false,
       })
     )
       .select("-password")
@@ -497,6 +553,7 @@ const getAdminAnalytics = async (req, res) => {
 
 module.exports = {
   verifyUser,
+  rejectUser,
   listPendingUsers,
   listUsers,
   getAllStudents,

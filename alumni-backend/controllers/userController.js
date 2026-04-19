@@ -3,6 +3,7 @@ const StudentProfile = require("../models/StudentProfile");
 const AlumniProfile = require("../models/AlumniProfile");
 const Message = require("../models/Message");
 const { getProfileCompletion } = require("../utils/profileCompletion");
+const sendEmail = require("../utils/sendEmail");
 
 const escapeRegex = (value) => String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const normalizeText = (value) => String(value || "").trim();
@@ -107,7 +108,7 @@ const roleWeight = (role) => {
   return 5;
 };
 
-const scoreUserResult = (user, query) => {
+const scoreUserResult = (user, profile, query) => {
   if (!query) return roleWeight(user.role) + 5;
 
   const q = query.toLowerCase();
@@ -116,6 +117,12 @@ const scoreUserResult = (user, query) => {
   const prn = String(user.prn || "").toLowerCase();
   const instituteCode = String(user.instituteCode || "").toLowerCase();
   const role = String(user.role || "").toLowerCase();
+  const branch = String(profile?.branch || "").toLowerCase();
+  const graduationYear = String(profile?.graduationYear || "").toLowerCase();
+  const currentCompany = String(profile?.currentCompany || "").toLowerCase();
+  const jobTitle = String(profile?.jobTitle || "").toLowerCase();
+  const skills = Array.isArray(profile?.skills) ? profile.skills.join(" ").toLowerCase() : "";
+  const interests = Array.isArray(profile?.interests) ? profile.interests.join(" ").toLowerCase() : "";
 
   let score = roleWeight(user.role);
 
@@ -131,6 +138,12 @@ const scoreUserResult = (user, query) => {
   if (email.includes(q)) score += 10;
 
   if (role.includes(q)) score += 8;
+  if (branch.includes(q)) score += 14;
+  if (graduationYear.includes(q)) score += 8;
+  if (currentCompany.includes(q)) score += 18;
+  if (jobTitle.includes(q)) score += 16;
+  if (skills.includes(q)) score += 10;
+  if (interests.includes(q)) score += 6;
 
   return score;
 };
@@ -262,6 +275,19 @@ exports.updateMe = async (req, res) => {
       profile,
     });
 
+    if (updatedUser.email) {
+      try {
+        await sendEmail({
+          to: updatedUser.email,
+          subject: "AlumHub Profile Updated Successfully",
+          text: `Hello ${updatedUser.name},\n\nYour profile was updated successfully.\nCurrent completion: ${profileCompletion.completionPercent}%.\n\nIf this was not done by you, contact your college admin immediately.\n\nRegards,\nAlumHub`,
+          html: `<p>Hello ${updatedUser.name},</p><p>Your profile was updated successfully.</p><p><b>Current completion:</b> ${profileCompletion.completionPercent}%</p><p>If this was not done by you, contact your college admin immediately.</p><p>Regards,<br/>AlumHub</p>`,
+        });
+      } catch (mailError) {
+        console.error("Profile update email warning:", mailError.message);
+      }
+    }
+
     return res.json({ user: updatedUser, profile, profileCompletion });
   } catch (err) {
     console.error(err);
@@ -375,10 +401,31 @@ exports.globalSearch = async (req, res) => {
       .limit(120)
       .lean();
 
+    const userIds = users.map((item) => item._id);
+    const [studentProfiles, alumniProfiles] = await Promise.all([
+      StudentProfile.find({
+        user: { $in: userIds },
+        collegeId: req.user.collegeId,
+      })
+        .select("user branch graduationYear skills interests")
+        .lean(),
+      AlumniProfile.find({
+        user: { $in: userIds },
+        collegeId: req.user.collegeId,
+      })
+        .select("user branch graduationYear currentCompany jobTitle skills interests")
+        .lean(),
+    ]);
+
+    const profileMap = new Map();
+    studentProfiles.forEach((profile) => profileMap.set(String(profile.user), profile));
+    alumniProfiles.forEach((profile) => profileMap.set(String(profile.user), profile));
+
     const rankedUsers = users
       .map((user) => ({
         ...user,
-        searchScore: scoreUserResult(user, query),
+        profile: profileMap.get(String(user._id)) || null,
+        searchScore: scoreUserResult(user, profileMap.get(String(user._id)), query),
       }))
       .filter((user) => user.searchScore > 0)
       .sort((a, b) => {

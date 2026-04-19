@@ -2,6 +2,7 @@ const express = require("express");
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
 const {
   verifyUser,
+  rejectUser,
   listPendingUsers,
   listUsers,
   getAllStudents,
@@ -19,6 +20,7 @@ const {
 const router = express.Router();
 
 router.put("/verify/:id", protect, authorizeRoles("admin"), verifyUser);
+router.put("/reject/:id", protect, authorizeRoles("admin"), rejectUser);
 router.get("/pending", protect, authorizeRoles("admin"), listPendingUsers);
 router.get("/users", protect, authorizeRoles("admin"), listUsers);
 router.get("/students", protect, authorizeRoles("admin"), getAllStudents);
