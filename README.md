@@ -65,7 +65,7 @@ Create `alumni-backend/.env` and set:
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/alumniDB
 JWT_SECRET=your_jwt_secret
-CLIENT_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+CLIENT_ORIGINS=https://alumhub.vercel.app,http://localhost:5173,http://127.0.0.1:5173
 ```
 
 Add mail credentials if email sending is enabled in your environment.
@@ -85,7 +85,13 @@ npm run dev
 ```
 
 Frontend default URL: `http://localhost:5173`  
-Backend base URL: `http://localhost:5000/api`
+Frontend default backend: `https://alumhub.up.railway.app/api`
+
+To switch frontend to local backend while developing, create `alumni-frontend/.env.local`:
+
+```env
+VITE_API_BASE_URL=http://localhost:5000/api
+```
 
 ## Document Upload Service Setup (Cloudinary)
 

@@ -5,7 +5,8 @@ import api from "../utils/axiosInstance";
 import { getErrorMessage } from "../utils/errorUtils";
 import { useAuth } from "../context/AuthContext";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const DEFAULT_API_BASE_URL = "https://alumhub.up.railway.app/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL;
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || API_BASE.replace(/\/api\/?$/, "");
 
 const relativeTime = (iso) => {
@@ -182,4 +183,3 @@ export default function NotificationBell() {
     </div>
   );
 }
-
