@@ -158,6 +158,12 @@ export default function Signup() {
       setSuccess(res.data?.msg || "Signup successful.");
       setAwaitingEmailVerification(true);
     } catch (err) {
+      if (err?.code === "ECONNABORTED") {
+        setError(
+          "Signup request timed out. Your account may still be created. Retry once with the same email, or use login/resend verification code."
+        );
+        return;
+      }
       setError(getErrorMessage(err, "Signup failed"));
     } finally {
       setLoading(false);

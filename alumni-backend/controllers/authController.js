@@ -12,8 +12,23 @@ const { sendPhoneVerificationCode } = require("../utils/phoneVerification");
 const { EMAIL_VERIFICATION_ENABLED, PHONE_VERIFICATION_ENABLED } = require("../config/verificationFlags");
 
 const PROFILE_REMINDER_INTERVAL_MS = 48 * 60 * 60 * 1000;
+const EMAIL_SEND_TIMEOUT_MS = Number(process.env.EMAIL_SEND_TIMEOUT_MS || 8000);
 
 const normalizeRole = (role) => (role === "collegeAdmin" ? "admin" : role);
+
+const withTimeout = async (promise, timeoutMs, timeoutMessage) => {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+};
 
 const parseDuplicateKeyMessage = (err) => {
   if (!err || err.code !== 11000) return null;
@@ -404,10 +419,14 @@ exports.signup = async (req, res) => {
     let emailDispatchWarning = "";
 
     try {
-      await sendSignupVerificationEmails({
-        user,
-        emailCode: emailVerification?.code,
-      });
+      await withTimeout(
+        sendSignupVerificationEmails({
+          user,
+          emailCode: emailVerification?.code,
+        }),
+        EMAIL_SEND_TIMEOUT_MS,
+        "Verification email dispatch timed out"
+      );
     } catch (mailErr) {
       console.error("Signup verification email error:", mailErr.message);
       emailDispatchWarning = " Email verification mail could not be sent right now. Please use resend code.";
@@ -516,14 +535,24 @@ exports.resendEmailCode = async (req, res) => {
     user.emailVerificationExpires = nextCode.expiresAt;
     await user.save();
 
-    await sendSignupVerificationEmails({
-      user,
-      emailCode: nextCode.code,
-    });
+    let resendWarning = "";
+    try {
+      await withTimeout(
+        sendSignupVerificationEmails({
+          user,
+          emailCode: nextCode.code,
+        }),
+        EMAIL_SEND_TIMEOUT_MS,
+        "Verification email resend timed out"
+      );
+    } catch (mailErr) {
+      console.error("Resend verification email error:", mailErr.message);
+      resendWarning = " Email could not be sent right now. Please retry in a few minutes.";
+    }
 
     return res.json({
       success: true,
-      msg: "Verification code sent to your email",
+      msg: `Verification code generated.${resendWarning}`,
     });
   } catch (err) {
     console.error("Resend email code error:", err);
