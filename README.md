@@ -69,6 +69,18 @@ CLIENT_ORIGINS=https://alumhub.vercel.app,http://localhost:5173,http://127.0.0.1
 ```
 
 Add mail credentials if email sending is enabled in your environment.
+For Railway/production, use SMTP settings (recommended for reliable OTP delivery):
+
+```env
+EMAIL_USER=your_sender_email@gmail.com
+EMAIL_PASS=your_app_password
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_REQUIRE_TLS=true
+EMAIL_TIMEOUT_MS=30000
+EMAIL_SEND_TIMEOUT_MS=35000
+```
 
 ## 3) Run backend
 

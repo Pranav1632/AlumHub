@@ -41,6 +41,7 @@ export default function Signup() {
   });
   const [otpCode, setOtpCode] = useState("");
   const [awaitingEmailVerification, setAwaitingEmailVerification] = useState(false);
+  const [emailCodeSent, setEmailCodeSent] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -156,6 +157,7 @@ export default function Signup() {
     try {
       const res = await api.post("/auth/signup", signupPayload);
       setSuccess(res.data?.msg || "Signup successful.");
+      setEmailCodeSent(res.data?.emailDispatchSucceeded !== false);
       setAwaitingEmailVerification(true);
     } catch (err) {
       if (err?.code === "ECONNABORTED") {
@@ -343,7 +345,11 @@ export default function Signup() {
         {awaitingEmailVerification && (
           <div className="space-y-3 border border-blue-200 bg-blue-50 rounded-xl p-4">
             <p className="text-sm text-blue-900 font-medium">Step 2: Verify your email before login</p>
-            <p className="text-xs text-blue-800">A 6-digit code has been sent to {signupPayload.email}.</p>
+            <p className="text-xs text-blue-800">
+              {emailCodeSent
+                ? `A 6-digit code has been sent to ${signupPayload.email}.`
+                : `We could not deliver the email code yet. Click "Resend Code" for ${signupPayload.email}.`}
+            </p>
             <input
               value={otpCode}
               onChange={(e) => setOtpCode(e.target.value)}

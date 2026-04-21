@@ -12,7 +12,12 @@ const { sendPhoneVerificationCode } = require("../utils/phoneVerification");
 const { EMAIL_VERIFICATION_ENABLED, PHONE_VERIFICATION_ENABLED } = require("../config/verificationFlags");
 
 const PROFILE_REMINDER_INTERVAL_MS = 48 * 60 * 60 * 1000;
-const EMAIL_SEND_TIMEOUT_MS = Number(process.env.EMAIL_SEND_TIMEOUT_MS || 8000);
+const EMAIL_SEND_TIMEOUT_MS = Number(
+  process.env.EMAIL_SEND_TIMEOUT_MS ||
+    process.env.EMAIL_SOCKET_TIMEOUT_MS ||
+    process.env.EMAIL_TIMEOUT_MS ||
+    35000
+);
 
 const normalizeRole = (role) => (role === "collegeAdmin" ? "admin" : role);
 
@@ -417,6 +422,7 @@ exports.signup = async (req, res) => {
     }
 
     let emailDispatchWarning = "";
+    let emailDispatchSucceeded = true;
 
     try {
       await withTimeout(
@@ -430,6 +436,7 @@ exports.signup = async (req, res) => {
     } catch (mailErr) {
       console.error("Signup verification email error:", mailErr.message);
       emailDispatchWarning = " Email verification mail could not be sent right now. Please use resend code.";
+      emailDispatchSucceeded = false;
     }
 
     if (PHONE_VERIFICATION_ENABLED && phoneVerification?.code) {
@@ -441,6 +448,7 @@ exports.signup = async (req, res) => {
 
     return res.status(201).json({
       msg: `Signup successful. Verify your email and wait for admin verification before login.${emailDispatchWarning}`,
+      emailDispatchSucceeded,
       user: {
         id: user._id,
         name: user.name,
