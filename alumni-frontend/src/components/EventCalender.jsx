@@ -29,7 +29,7 @@ export default function EventCalendar() {
       <Calendar
         onChange={setDate}
         value={date}
-        tileContent={tileContent}
+        tileContent={tiledContent}
       />
       <p>Selected date: {date.toDateString()}</p>
     </div>
