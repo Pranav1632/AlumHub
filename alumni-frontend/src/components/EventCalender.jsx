@@ -1,7 +1,27 @@
 // src/components/EventCalendar.jsx
 import React, { useState } from "react";
 import Calendar from "react-calendar";
+import 'react-calendar/dist/Calendar.css'; // basic styles
 
+export default function EventCalendar() {
+  const [date, setDate] = useState(new Date());
+
+  // Example events (later can fetch from backend)
+  const events = [
+      { date: "2025-09-20", title: "🎉 Alumni Meetup" },
+    { date: "2025-09-25", title: "🎤 Guest Lecture" },
+    { date: "2025-09-05", title: "🏆 Hackathon" },
+    { date: "2025-09-05", title: "Tech Fest" },
+  ];
+
+  const tileContent = ({ date, view }) => {
+    if (view === "month") {
+      const eventForDay = events.find(
+        (e) => new Date(e.date).toDateString() === date.toDateString()
+      );
+      return eventForDay ? <p style={{ fontSize: "0.7rem" }}>{eventForDay.title}</p> : null;
+    }
+  };
 
   return (
     <div>
